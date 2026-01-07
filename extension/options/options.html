@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Posture & Tension Relief - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>💆 Posture & Tension Relief</h1>
+      <p class="subtitle">Settings</p>
+    </header>
+
+    <div class="content">
+      <!-- Reminder Intervals -->
+      <section class="section">
+        <h2>⏰ Reminder Intervals</h2>
+
+        <div class="setting-group">
+          <label for="postureInterval">Posture Check Reminder</label>
+          <div class="input-group">
+            <input type="number" id="postureInterval" min="5" max="60" step="5" value="10">
+            <span class="unit">minutes</span>
+          </div>
+          <p class="help-text">How often to remind you to check your posture</p>
+        </div>
+
+        <div class="setting-group">
+          <label for="stretchInterval">Stretch Break Reminder</label>
+          <div class="input-group">
+            <input type="number" id="stretchInterval" min="15" max="120" step="5" value="30">
+            <span class="unit">minutes</span>
+          </div>
+          <p class="help-text">How often to remind you to take a stretch break</p>
+        </div>
+      </section>
+
+      <!-- Working Hours -->
+      <section class="section">
+        <h2>🕒 Working Hours</h2>
+
+        <div class="setting-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="enableWorkingHours">
+            <span>Enable working hours schedule</span>
+          </label>
+          <p class="help-text">Only show reminders during specific hours</p>
+        </div>
+
+        <div id="workingHoursSettings" class="sub-settings" style="display: none;">
+          <div class="setting-group">
+            <label for="workHoursStart">Start Time</label>
+            <input type="time" id="workHoursStart" value="09:00">
+          </div>
+
+          <div class="setting-group">
+            <label for="workHoursEnd">End Time</label>
+            <input type="time" id="workHoursEnd" value="17:00">
+          </div>
+        </div>
+      </section>
+
+      <!-- Audio Settings -->
+      <section class="section">
+        <h2>🔔 Audio Notifications</h2>
+
+        <div class="setting-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="enableAudio" checked>
+            <span>Enable notification sounds</span>
+          </label>
+          <p class="help-text">Play a gentle chime with each reminder</p>
+        </div>
+
+        <div id="audioSettings" class="sub-settings">
+          <div class="setting-group">
+            <label for="volume">Volume</label>
+            <div class="slider-container">
+              <input type="range" id="volume" min="0" max="100" value="70" step="10">
+              <span id="volumeValue" class="value-display">70%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stretch Library -->
+      <section class="section">
+        <h2>🧘 Stretch Library</h2>
+        <p class="help-text" style="margin-bottom: 15px;">Browse available stretches and exercises</p>
+
+        <div id="stretchList" class="stretch-list">
+          <!-- Stretches will be dynamically loaded here -->
+        </div>
+      </section>
+
+      <!-- Educational Content -->
+      <section class="section">
+        <h2>📚 Tips for Better Posture</h2>
+
+        <div class="tips-grid">
+          <div class="tip-card">
+            <h3>Monitor Position</h3>
+            <p>Position your monitor at arm's length, with the top of the screen at or slightly below eye level.</p>
+          </div>
+
+          <div class="tip-card">
+            <h3>Keyboard & Mouse</h3>
+            <p>Keep your keyboard and mouse close to avoid reaching. Wrists should be neutral, not bent up or down.</p>
+          </div>
+
+          <div class="tip-card">
+            <h3>Chair Height</h3>
+            <p>Adjust your chair so feet are flat on the floor and knees are at a 90-degree angle.</p>
+          </div>
+
+          <div class="tip-card">
+            <h3>Take Breaks</h3>
+            <p>Follow the 20-20-20 rule: Every 20 minutes, look at something 20 feet away for 20 seconds.</p>
+          </div>
+
+          <div class="tip-card">
+            <h3>Sitting Posture</h3>
+            <p>Sit back in your chair with your back supported. Avoid leaning forward or slouching.</p>
+          </div>
+
+          <div class="tip-card">
+            <h3>Phone Usage</h3>
+            <p>Hold your phone at eye level instead of looking down to avoid "text neck" and tension headaches.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <button id="saveBtn" class="btn btn-primary">Save Settings</button>
+      <button id="resetBtn" class="btn btn-secondary">Reset to Defaults</button>
+      <div id="saveMessage" class="save-message" style="display: none;">✓ Settings saved!</div>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate Extension Icons</title>
+</head>
+<body>
+  <h1>Extension Icon Generator</h1>
+  <p>This page generates simple placeholder icons for the extension.</p>
+  <p>Open DevTools Console and run the script below to download icons.</p>
+
+  <canvas id="canvas16" width="16" height="16" style="border: 1px solid black; margin: 5px;"></canvas>
+  <canvas id="canvas48" width="48" height="48" style="border: 1px solid black; margin: 5px;"></canvas>
+  <canvas id="canvas128" width="128" height="128" style="border: 1px solid black; margin: 5px;"></canvas>
+
+  <br>
+  <button onclick="generateIcons()">Generate & Download Icons</button>
+
+  <script>
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+
+      // Background gradient (purple theme)
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#667eea');
+      gradient.addColorStop(1, '#764ba2');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+
+      // Draw a simple person/posture icon
+      ctx.fillStyle = 'white';
+
+      if (size >= 48) {
+        // Head
+        ctx.beginPath();
+        ctx.arc(size * 0.5, size * 0.35, size * 0.12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Body/spine
+        ctx.fillRect(size * 0.46, size * 0.45, size * 0.08, size * 0.35);
+
+        // Shoulders
+        ctx.beginPath();
+        ctx.moveTo(size * 0.3, size * 0.5);
+        ctx.lineTo(size * 0.7, size * 0.5);
+        ctx.lineWidth = size * 0.08;
+        ctx.strokeStyle = 'white';
+        ctx.stroke();
+      } else {
+        // Simplified for 16x16
+        // Head
+        ctx.beginPath();
+        ctx.arc(size * 0.5, size * 0.4, size * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Body
+        ctx.fillRect(size * 0.4, size * 0.55, size * 0.2, size * 0.3);
+      }
+    }
+
+    function generateIcons() {
+      [16, 48, 128].forEach(size => {
+        const canvas = document.getElementById(`canvas${size}`);
+        drawIcon(canvas, size);
+
+        // Download
+        canvas.toBlob(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `icon${size}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+      });
+
+      alert('Icons generated! Check your downloads folder.');
+    }
+
+    // Auto-draw on load
+    window.onload = () => {
+      drawIcon(document.getElementById('canvas16'), 16);
+      drawIcon(document.getElementById('canvas48'), 48);
+      drawIcon(document.getElementById('canvas128'), 128);
+    };
+  </script>
+</body>
+</html>
