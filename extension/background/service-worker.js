@@ -32,11 +32,22 @@ chrome.runtime.onInstalled.addListener(async () => {
   // Load or set default settings
   const result = await chrome.storage.sync.get('settings');
   if (!result.settings) {
+    console.log('Initializing default settings');
     await chrome.storage.sync.set({ settings: DEFAULT_SETTINGS });
   }
 
   // Start alarms
-  startAlarms();
+  await startAlarms();
+});
+
+// Also initialize on startup (when browser starts)
+chrome.runtime.onStartup.addListener(async () => {
+  console.log('Extension starting up');
+  const result = await chrome.storage.sync.get('settings');
+  if (!result.settings) {
+    await chrome.storage.sync.set({ settings: DEFAULT_SETTINGS });
+  }
+  await startAlarms();
 });
 
 // Start all alarms based on current settings
@@ -219,14 +230,15 @@ function playSound(soundType, volume = 0.7) {
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   switch (request.action) {
     case 'toggleEnabled':
-      const { settings } = await chrome.storage.sync.get('settings');
+      const result1 = await chrome.storage.sync.get('settings');
+      const settings = result1.settings || DEFAULT_SETTINGS;
       settings.enabled = !settings.enabled;
       await chrome.storage.sync.set({ settings });
 
       if (settings.enabled) {
-        startAlarms();
+        await startAlarms();
       } else {
-        stopAlarms();
+        await stopAlarms();
       }
 
       sendResponse({ enabled: settings.enabled });
@@ -234,7 +246,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
     case 'updateSettings':
       await chrome.storage.sync.set({ settings: request.settings });
-      startAlarms(); // Restart with new settings
+      await startAlarms(); // Restart with new settings
       sendResponse({ success: true });
       break;
 
@@ -244,14 +256,14 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       break;
 
     case 'testPostureNotification':
-      const config = await chrome.storage.sync.get('settings');
-      showPostureReminder(config.settings || DEFAULT_SETTINGS);
+      const result2 = await chrome.storage.sync.get('settings');
+      await showPostureReminder(result2.settings || DEFAULT_SETTINGS);
       sendResponse({ success: true });
       break;
 
     case 'testStretchNotification':
-      const cfg = await chrome.storage.sync.get('settings');
-      showStretchReminder(cfg.settings || DEFAULT_SETTINGS);
+      const result3 = await chrome.storage.sync.get('settings');
+      await showStretchReminder(result3.settings || DEFAULT_SETTINGS);
       sendResponse({ success: true });
       break;
   }

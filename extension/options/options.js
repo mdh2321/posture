@@ -1,21 +1,12 @@
-// Import stretches (using dynamic import since we can't use importScripts in options page)
-let STRETCHES = [];
+// STRETCHES array is loaded from ../lib/stretches.js via script tag in HTML
 
-// Load stretches from lib
-async function loadStretches() {
-  try {
-    const response = await fetch(chrome.runtime.getURL('lib/stretches.js'));
-    const text = await response.text();
-
-    // Execute the stretches.js code
-    eval(text);
-
-    // Now STRETCHES should be available
-    if (typeof STRETCHES !== 'undefined') {
-      renderStretchList();
-    }
-  } catch (error) {
-    console.error('Error loading stretches:', error);
+// Initialize stretch list rendering
+function loadStretches() {
+  // STRETCHES is already available from the script tag
+  if (typeof STRETCHES !== 'undefined' && STRETCHES.length > 0) {
+    renderStretchList();
+  } else {
+    console.error('STRETCHES not loaded');
   }
 }
 
