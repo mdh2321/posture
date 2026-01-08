@@ -1,11 +1,18 @@
 // Load current settings and update UI
 async function loadSettings() {
-  const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
-  if (!response || !response.settings) {
-    console.error('Failed to load settings from background');
-    return;
-  }
-  const settings = response.settings;
+  try {
+    console.log('Requesting settings from background...');
+    const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
+    console.log('Response received:', response);
+
+    if (!response || !response.settings) {
+      console.error('Failed to load settings from background', response);
+      // Try to show default state at least
+      updateStatus(true);
+      return;
+    }
+    const settings = response.settings;
+    console.log('Settings loaded:', settings);
 
   // Update status indicator
   updateStatus(settings.enabled);
@@ -21,6 +28,11 @@ async function loadSettings() {
       `${settings.workingHours.start} - ${settings.workingHours.end}`;
   } else {
     document.getElementById('workingHoursRow').style.display = 'none';
+  }
+  } catch (error) {
+    console.error('Error loading settings:', error);
+    // Show default state
+    updateStatus(true);
   }
 }
 
@@ -57,12 +69,16 @@ document.getElementById('toggleBtn').addEventListener('click', async () => {
 
 // Test posture notification
 document.getElementById('testPostureBtn').addEventListener('click', async () => {
-  await chrome.runtime.sendMessage({ action: 'testPostureNotification' });
+  console.log('Test posture button clicked');
+  const response = await chrome.runtime.sendMessage({ action: 'testPostureNotification' });
+  console.log('Test posture response:', response);
 });
 
 // Test stretch notification
 document.getElementById('testStretchBtn').addEventListener('click', async () => {
-  await chrome.runtime.sendMessage({ action: 'testStretchNotification' });
+  console.log('Test stretch button clicked');
+  const response = await chrome.runtime.sendMessage({ action: 'testStretchNotification' });
+  console.log('Test stretch response:', response);
 });
 
 // Open settings page

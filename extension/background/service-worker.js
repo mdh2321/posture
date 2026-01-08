@@ -126,16 +126,22 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 // Show posture check reminder
 async function showPostureReminder(config) {
+  console.log('showPostureReminder called with config:', config);
   const notificationId = `posture-${Date.now()}`;
 
-  await chrome.notifications.create(notificationId, {
-    type: 'basic',
-    iconUrl: '../assets/icons/icon128.png',
-    title: 'Posture Check',
-    message: 'Take a moment to check your posture. Sit up straight, shoulders back, chin level.',
-    priority: 1,
-    requireInteraction: false
-  });
+  try {
+    const createdId = await chrome.notifications.create(notificationId, {
+      type: 'basic',
+      iconUrl: '../assets/icons/icon128.png',
+      title: 'Posture Check',
+      message: 'Take a moment to check your posture. Sit up straight, shoulders back, chin level.',
+      priority: 1,
+      requireInteraction: false
+    });
+    console.log('Posture notification created with ID:', createdId);
+  } catch (error) {
+    console.error('Error creating posture notification:', error);
+  }
 
   // Play audio if enabled
   if (config.audio.enabled) {
@@ -150,22 +156,28 @@ async function showPostureReminder(config) {
 
 // Show stretch reminder with a random stretch
 async function showStretchReminder(config) {
+  console.log('showStretchReminder called with config:', config);
   const stretch = getRandomStretch();
   const notificationId = `stretch-${Date.now()}`;
 
   const message = `Time for a stretch break!\n\n${stretch.name}\n${stretch.description}`;
 
-  await chrome.notifications.create(notificationId, {
-    type: 'basic',
-    iconUrl: '../assets/icons/icon128.png',
-    title: 'Stretch Break',
-    message: message,
-    priority: 2,
-    requireInteraction: false,
-    buttons: [
-      { title: 'Show Instructions' }
-    ]
-  });
+  try {
+    const createdId = await chrome.notifications.create(notificationId, {
+      type: 'basic',
+      iconUrl: '../assets/icons/icon128.png',
+      title: 'Stretch Break',
+      message: message,
+      priority: 2,
+      requireInteraction: false,
+      buttons: [
+        { title: 'Show Instructions' }
+      ]
+    });
+    console.log('Stretch notification created with ID:', createdId);
+  } catch (error) {
+    console.error('Error creating stretch notification:', error);
+  }
 
   // Store stretch ID for later retrieval
   await chrome.storage.local.set({ [`stretch-${notificationId}`]: stretch.id });
