@@ -1,6 +1,10 @@
 // Load current settings and update UI
 async function loadSettings() {
   const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
+  if (!response || !response.settings) {
+    console.error('Failed to load settings from background');
+    return;
+  }
   const settings = response.settings;
 
   // Update status indicator
@@ -44,7 +48,11 @@ function updateStatus(enabled) {
 // Toggle enabled/disabled
 document.getElementById('toggleBtn').addEventListener('click', async () => {
   const response = await chrome.runtime.sendMessage({ action: 'toggleEnabled' });
-  updateStatus(response.enabled);
+  if (response && response.enabled !== undefined) {
+    updateStatus(response.enabled);
+  } else {
+    console.error('Failed to toggle enabled state');
+  }
 });
 
 // Test posture notification

@@ -227,46 +227,57 @@ function playSound(soundType, volume = 0.7) {
 }
 
 // Listen for messages from popup
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-  switch (request.action) {
-    case 'toggleEnabled':
-      const result1 = await chrome.storage.sync.get('settings');
-      const settings = result1.settings || DEFAULT_SETTINGS;
-      settings.enabled = !settings.enabled;
-      await chrome.storage.sync.set({ settings });
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Handle async operations properly
+  (async () => {
+    try {
+      switch (request.action) {
+        case 'toggleEnabled':
+          const result1 = await chrome.storage.sync.get('settings');
+          const settings = result1.settings || DEFAULT_SETTINGS;
+          settings.enabled = !settings.enabled;
+          await chrome.storage.sync.set({ settings });
 
-      if (settings.enabled) {
-        await startAlarms();
-      } else {
-        await stopAlarms();
+          if (settings.enabled) {
+            await startAlarms();
+          } else {
+            await stopAlarms();
+          }
+
+          sendResponse({ enabled: settings.enabled });
+          break;
+
+        case 'updateSettings':
+          await chrome.storage.sync.set({ settings: request.settings });
+          await startAlarms(); // Restart with new settings
+          sendResponse({ success: true });
+          break;
+
+        case 'getSettings':
+          const result = await chrome.storage.sync.get('settings');
+          sendResponse({ settings: result.settings || DEFAULT_SETTINGS });
+          break;
+
+        case 'testPostureNotification':
+          const result2 = await chrome.storage.sync.get('settings');
+          await showPostureReminder(result2.settings || DEFAULT_SETTINGS);
+          sendResponse({ success: true });
+          break;
+
+        case 'testStretchNotification':
+          const result3 = await chrome.storage.sync.get('settings');
+          await showStretchReminder(result3.settings || DEFAULT_SETTINGS);
+          sendResponse({ success: true });
+          break;
+
+        default:
+          sendResponse({ error: 'Unknown action' });
       }
-
-      sendResponse({ enabled: settings.enabled });
-      break;
-
-    case 'updateSettings':
-      await chrome.storage.sync.set({ settings: request.settings });
-      await startAlarms(); // Restart with new settings
-      sendResponse({ success: true });
-      break;
-
-    case 'getSettings':
-      const result = await chrome.storage.sync.get('settings');
-      sendResponse({ settings: result.settings || DEFAULT_SETTINGS });
-      break;
-
-    case 'testPostureNotification':
-      const result2 = await chrome.storage.sync.get('settings');
-      await showPostureReminder(result2.settings || DEFAULT_SETTINGS);
-      sendResponse({ success: true });
-      break;
-
-    case 'testStretchNotification':
-      const result3 = await chrome.storage.sync.get('settings');
-      await showStretchReminder(result3.settings || DEFAULT_SETTINGS);
-      sendResponse({ success: true });
-      break;
-  }
+    } catch (error) {
+      console.error('Error handling message:', error);
+      sendResponse({ error: error.message });
+    }
+  })();
 
   return true; // Keep message channel open for async response
 });
