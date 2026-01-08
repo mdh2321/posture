@@ -29,6 +29,13 @@ const ALARMS = {
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('Posture & Tension Relief extension installed');
 
+  // Check notification permission
+  const permission = await chrome.notifications.getPermissionLevel();
+  console.log('Notification permission level:', permission);
+  if (permission !== 'granted') {
+    console.warn('Notification permission not granted! Notifications will not appear.');
+  }
+
   // Load or set default settings
   const result = await chrome.storage.sync.get('settings');
   if (!result.settings) {
@@ -127,6 +134,16 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 // Show posture check reminder
 async function showPostureReminder(config) {
   console.log('showPostureReminder called with config:', config);
+
+  // Check permission first
+  const permission = await chrome.notifications.getPermissionLevel();
+  console.log('Current notification permission:', permission);
+  if (permission !== 'granted') {
+    console.error('Cannot show notification - permission not granted!');
+    console.log('Please enable notifications in chrome://settings/content/notifications');
+    return;
+  }
+
   const notificationId = `posture-${Date.now()}`;
 
   try {
@@ -157,6 +174,16 @@ async function showPostureReminder(config) {
 // Show stretch reminder with a random stretch
 async function showStretchReminder(config) {
   console.log('showStretchReminder called with config:', config);
+
+  // Check permission first
+  const permission = await chrome.notifications.getPermissionLevel();
+  console.log('Current notification permission:', permission);
+  if (permission !== 'granted') {
+    console.error('Cannot show notification - permission not granted!');
+    console.log('Please enable notifications in chrome://settings/content/notifications');
+    return;
+  }
+
   const stretch = getRandomStretch();
   const notificationId = `stretch-${Date.now()}`;
 
