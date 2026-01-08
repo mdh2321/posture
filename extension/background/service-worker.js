@@ -162,7 +162,7 @@ async function showPostureReminder(config) {
 
   // Play audio if enabled
   if (config.audio.enabled) {
-    playSound('posture-chime', config.audio.volume);
+    await playSound('posture-chime', config.audio.volume);
   }
 
   // Auto-dismiss after 10 seconds
@@ -211,7 +211,7 @@ async function showStretchReminder(config) {
 
   // Play audio if enabled
   if (config.audio.enabled) {
-    playSound('stretch-bell', config.audio.volume);
+    await playSound('stretch-bell', config.audio.volume);
   }
 
   // Auto-dismiss after 15 seconds
@@ -255,14 +255,35 @@ async function showStretchInstructions(stretch) {
   });
 }
 
-// Play notification sound
-function playSound(soundType, volume = 0.7) {
-  // Create an offscreen document to play audio (required in Manifest V3)
-  // For MVP, we'll use a simpler approach with notification sounds
-  // Note: Chrome's built-in notification sounds will play automatically
-
-  // In a future version, we can add custom audio using offscreen documents
+// Play notification sound using offscreen document
+async function playSound(soundType, volume = 0.7) {
   console.log(`Playing sound: ${soundType} at volume ${volume}`);
+
+  try {
+    // Check if offscreen document exists
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT']
+    });
+
+    // Create offscreen document if it doesn't exist
+    if (existingContexts.length === 0) {
+      await chrome.offscreen.createDocument({
+        url: 'offscreen/offscreen.html',
+        reasons: ['AUDIO_PLAYBACK'],
+        justification: 'Play notification sounds for posture and stretch reminders'
+      });
+      console.log('Offscreen document created for audio playback');
+    }
+
+    // Send message to offscreen document to play sound
+    await chrome.runtime.sendMessage({
+      action: 'playSound',
+      soundType: soundType,
+      volume: volume
+    });
+  } catch (error) {
+    console.error('Error playing sound:', error);
+  }
 }
 
 // Listen for messages from popup
