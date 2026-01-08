@@ -25,37 +25,33 @@ function playSound(soundType, volume = 0.7) {
 
   // Different sounds for different notification types
   if (soundType === 'posture-chime') {
-    // Beautiful chime: C6 with harmonics for bell-like quality
-    const fundamental = 1046.5; // C6
-    const duration = 1.2;
-
-    // Create multiple oscillators for harmonics (like a real bell/chime)
-    const harmonics = [
-      { freq: fundamental, gain: 1.0 },      // Fundamental
-      { freq: fundamental * 2, gain: 0.5 },  // Octave
-      { freq: fundamental * 3, gain: 0.25 }, // Fifth
-      { freq: fundamental * 4, gain: 0.15 }  // Third harmonic
+    // iPhone-style pleasant chime: Three soft ascending notes
+    const notes = [
+      { freq: 523.25, time: 0, duration: 0.15 },    // C5
+      { freq: 659.25, time: 0.08, duration: 0.15 },  // E5
+      { freq: 783.99, time: 0.16, duration: 0.25 }   // G5
     ];
 
-    harmonics.forEach((harmonic, index) => {
+    notes.forEach(note => {
       const osc = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
       osc.connect(gainNode);
       gainNode.connect(audioContext.destination);
 
-      osc.frequency.value = harmonic.freq;
-      osc.type = 'sine';
+      osc.frequency.value = note.freq;
+      osc.type = 'sine'; // Smooth, soft sine wave
 
-      // Each harmonic decays at slightly different rate for natural sound
-      const harmonicVolume = volume * harmonic.gain;
-      const decayTime = duration * (1 + index * 0.1); // Higher harmonics decay slightly faster
+      // Soft attack and decay
+      const startTime = audioContext.currentTime + note.time;
+      const endTime = startTime + note.duration;
 
-      gainNode.gain.setValueAtTime(harmonicVolume, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + decayTime);
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(volume * 0.6, startTime + 0.02); // Soft attack
+      gainNode.gain.exponentialRampToValueAtTime(0.001, endTime); // Gentle fade
 
-      osc.start(audioContext.currentTime);
-      osc.stop(audioContext.currentTime + decayTime);
+      osc.start(startTime);
+      osc.stop(endTime);
     });
   } else if (soundType === 'stretch-bell') {
     // Two-tone bell: E6 then C6
