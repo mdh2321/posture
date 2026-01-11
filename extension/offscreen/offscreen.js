@@ -54,36 +54,35 @@ function playSound(soundType, volume = 0.7) {
       osc.stop(endTime);
     });
   } else if (soundType === 'stretch-bell') {
-    // Two-tone bell: E6 then C6
-    oscillator.frequency.value = 1318.5; // E6
-    oscillator.type = 'sine';
+    // Pleasant stretch bell: Four descending notes (relaxing)
+    const notes = [
+      { freq: 783.99, time: 0, duration: 0.2 },     // G5
+      { freq: 659.25, time: 0.12, duration: 0.2 },   // E5
+      { freq: 523.25, time: 0.24, duration: 0.25 },  // C5
+      { freq: 392.00, time: 0.38, duration: 0.3 }    // G4
+    ];
 
-    // First tone
-    gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    notes.forEach(note => {
+      const osc = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
+      osc.connect(gainNode);
+      gainNode.connect(audioContext.destination);
 
-    // Second tone
-    setTimeout(() => {
-      const audioContext2 = new AudioContext();
-      const oscillator2 = audioContext2.createOscillator();
-      const gainNode2 = audioContext2.createGain();
+      osc.frequency.value = note.freq;
+      osc.type = 'sine'; // Smooth, soft sine wave
 
-      oscillator2.connect(gainNode2);
-      gainNode2.connect(audioContext2.destination);
+      // Soft attack and decay
+      const startTime = audioContext.currentTime + note.time;
+      const endTime = startTime + note.duration;
 
-      oscillator2.frequency.value = 1046.5; // C6
-      oscillator2.type = 'sine';
-      gainNode2.gain.value = volume;
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(volume * 0.5, startTime + 0.02); // Gentle attack
+      gainNode.gain.exponentialRampToValueAtTime(0.001, endTime); // Smooth fade
 
-      gainNode2.gain.setValueAtTime(volume, audioContext2.currentTime);
-      gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext2.currentTime + 0.4);
-
-      oscillator2.start(audioContext2.currentTime);
-      oscillator2.stop(audioContext2.currentTime + 0.4);
-    }, 350);
+      osc.start(startTime);
+      osc.stop(endTime);
+    });
   }
 }
 

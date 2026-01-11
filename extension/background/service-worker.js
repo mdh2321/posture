@@ -184,7 +184,15 @@ async function showStretchReminder(config) {
     return;
   }
 
-  const stretch = getRandomStretch();
+  // Get recent stretches to avoid repetition
+  const { recentStretches = [] } = await chrome.storage.local.get('recentStretches');
+  const stretch = getRandomStretch(null, recentStretches);
+
+  // Update recent stretches (keep last 5)
+  const updatedRecent = [stretch.id, ...recentStretches.slice(0, 4)];
+  await chrome.storage.local.set({ recentStretches: updatedRecent });
+  console.log('Recent stretches:', updatedRecent);
+
   const notificationId = `stretch-${Date.now()}`;
 
   const message = `Time for a stretch break!\n\n${stretch.name}\n${stretch.description}`;
@@ -198,7 +206,8 @@ async function showStretchReminder(config) {
       priority: 2,
       requireInteraction: false,
       buttons: [
-        { title: 'Show Instructions' }
+        { title: 'Show Instructions' },
+        { title: 'Done' }
       ]
     });
     console.log('Stretch notification created with ID:', createdId);
@@ -214,25 +223,27 @@ async function showStretchReminder(config) {
     await playSound('stretch-bell', config.audio.volume);
   }
 
-  // Auto-dismiss after 15 seconds
+  // Auto-dismiss after 30 seconds (increased from 15)
   setTimeout(() => {
     chrome.notifications.clear(notificationId);
-  }, 15000);
+  }, 30000);
 }
 
 // Handle notification button clicks
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
-  if (notificationId.startsWith('stretch-') && buttonIndex === 0) {
+  if (notificationId.startsWith('stretch-')) {
     // Get stretch ID from storage
     const key = `stretch-${notificationId}`;
     const result = await chrome.storage.local.get(key);
     const stretchId = result[key];
 
-    if (stretchId) {
-      const stretch = getStretchById(stretchId);
-      if (stretch) {
-        showStretchInstructions(stretch);
-      }
+    if (buttonIndex === 0 && stretchId) {
+      // "Show Instructions" button clicked
+      showStretchModal(stretchId);
+    } else if (buttonIndex === 1) {
+      // "Done" button clicked
+      console.log('Stretch marked as done:', stretchId);
+      // Future: Track completion
     }
 
     // Clear the notification
@@ -240,18 +251,17 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
   }
 });
 
-// Show detailed stretch instructions in a new notification
-async function showStretchInstructions(stretch) {
-  const instructions = stretch.instructions.join('\n• ');
-  const message = `${stretch.name}\n\n• ${instructions}\n\nBenefits: ${stretch.benefits}`;
+// Show detailed stretch instructions in a modal window
+async function showStretchModal(stretchId) {
+  const url = chrome.runtime.getURL(`modals/stretch-modal.html?id=${stretchId}`);
 
-  await chrome.notifications.create(`instructions-${Date.now()}`, {
-    type: 'basic',
-    iconUrl: '../assets/icons/icon128.png',
-    title: 'Stretch Instructions',
-    message: message,
-    priority: 2,
-    requireInteraction: true
+  // Create a new window with the stretch modal
+  await chrome.windows.create({
+    url: url,
+    type: 'popup',
+    width: 600,
+    height: 700,
+    focused: true
   });
 }
 
@@ -327,6 +337,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'testStretchNotification':
           const result3 = await chrome.storage.sync.get('settings');
           await showStretchReminder(result3.settings || DEFAULT_SETTINGS);
+          sendResponse({ success: true });
+          break;
+
+        case 'getStretchData':
+          const stretch = getStretchById(request.stretchId);
+          sendResponse({ stretch: stretch });
+          break;
+
+        case 'playCompletionSound':
+          const result4 = await chrome.storage.sync.get('settings');
+          const config = result4.settings || DEFAULT_SETTINGS;
+          await playSound('posture-chime', config.audio.volume);
+          sendResponse({ success: true });
+          break;
+
+        case 'stretchCompleted':
+          console.log('Stretch completed:', request.stretchId);
+          // Future: Track completion statistics
+          sendResponse({ success: true });
+          break;
+
+        case 'testSound':
+          await playSound(request.soundType, request.volume);
           sendResponse({ success: true });
           break;
 

@@ -163,6 +163,16 @@ function renderStretchList() {
   });
 }
 
+// Test sound buttons
+async function testSound(soundType) {
+  const volume = parseInt(document.getElementById('volume').value) / 100;
+  await chrome.runtime.sendMessage({
+    action: 'testSound',
+    soundType: soundType,
+    volume: volume
+  });
+}
+
 // Event listeners
 document.getElementById('saveBtn').addEventListener('click', saveSettings);
 document.getElementById('resetBtn').addEventListener('click', resetSettings);
@@ -173,6 +183,8 @@ document.getElementById('enableAudio').addEventListener('change', (e) => {
   toggleAudioSettings(e.target.checked);
 });
 document.getElementById('volume').addEventListener('input', updateVolumeDisplay);
+document.getElementById('testPostureSound').addEventListener('click', () => testSound('posture-chime'));
+document.getElementById('testStretchSound').addEventListener('click', () => testSound('stretch-bell'));
 
 // Initialize
 loadSettings();

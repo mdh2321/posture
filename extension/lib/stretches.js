@@ -169,10 +169,22 @@ const STRETCHES = [
 ];
 
 // Get a random stretch, optionally filtered by category
-function getRandomStretch(category = null) {
-  const filtered = category
+// Avoids recent stretches to prevent repetition
+function getRandomStretch(category = null, recentStretchIds = []) {
+  let filtered = category
     ? STRETCHES.filter(s => s.category === category)
     : STRETCHES;
+
+  // If we have recent stretches, try to avoid them
+  if (recentStretchIds.length > 0) {
+    const notRecent = filtered.filter(s => !recentStretchIds.includes(s.id));
+
+    // Only use non-recent stretches if we have at least one option
+    // Otherwise fall back to all stretches (edge case: very few stretches or all recent)
+    if (notRecent.length > 0) {
+      filtered = notRecent;
+    }
+  }
 
   return filtered[Math.floor(Math.random() * filtered.length)];
 }

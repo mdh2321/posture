@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stretch Instructions</title>
+  <link rel="stylesheet" href="stretch-modal.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="stretchName">Loading...</h1>
+      <button id="closeBtn" class="close-btn">✕</button>
+    </header>
+
+    <div class="content">
+      <div class="meta">
+        <span id="duration" class="badge">⏱️ 30s</span>
+        <span id="difficulty" class="badge">📊 Easy</span>
+        <span id="category" class="badge">🏷️ Neck</span>
+      </div>
+
+      <p id="description" class="description">Stretch description...</p>
+
+      <div class="benefits">
+        <strong>Benefits:</strong>
+        <p id="benefits">Loading benefits...</p>
+      </div>
+
+      <div class="instructions">
+        <h2>Instructions</h2>
+        <ol id="instructionsList">
+          <li>Loading...</li>
+        </ol>
+      </div>
+
+      <div class="timer">
+        <div class="timer-display" id="timerDisplay">0:30</div>
+        <button id="startTimerBtn" class="btn btn-primary">Start Timer</button>
+      </div>
+    </div>
+
+    <footer>
+      <button id="doneBtn" class="btn btn-success">✓ Done</button>
+      <button id="skipBtn" class="btn btn-secondary">Skip for Now</button>
+    </footer>
+  </div>
+
+  <script src="stretch-modal.js"></script>
+</body>
+</html>
