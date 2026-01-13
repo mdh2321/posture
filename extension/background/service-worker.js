@@ -131,6 +131,18 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
+// Posture reminder messages (rotated for variety)
+const POSTURE_MESSAGES = [
+  "Quick posture check",
+  "Shoulders back, chin level",
+  "How's your posture looking?",
+  "Straighten that spine",
+  "Time to straighten up",
+  "Sit up tall",
+  "How's that posture?",
+  "Align your spine"
+];
+
 // Show posture check reminder
 async function showPostureReminder(config) {
   console.log('showPostureReminder called with config:', config);
@@ -144,6 +156,9 @@ async function showPostureReminder(config) {
     return;
   }
 
+  // Get random message from the list
+  const message = POSTURE_MESSAGES[Math.floor(Math.random() * POSTURE_MESSAGES.length)];
+
   const notificationId = `posture-${Date.now()}`;
 
   try {
@@ -151,7 +166,7 @@ async function showPostureReminder(config) {
       type: 'basic',
       iconUrl: '../assets/icons/icon128.png',
       title: 'Posture Check',
-      message: 'Take a moment to check your posture. Sit up straight, shoulders back, chin level.',
+      message: message,
       priority: 1,
       requireInteraction: false
     });
