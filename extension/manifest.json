@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Posture & Tension Relief",
+  "name": "Posture Check",
   "version": "1.0.0",
-  "description": "Gentle reminders to check your posture and stretch to relieve tension headaches",
+  "description": "Better posture through gentle reminders and guided stretches for desk workers",
   "permissions": [
     "alarms",
     "notifications",
