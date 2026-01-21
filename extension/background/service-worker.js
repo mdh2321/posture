@@ -24,6 +24,20 @@ chrome.runtime.onInstalled.addListener(async () => {
   if (!result.settings) {
     console.log('Initializing default settings');
     await chrome.storage.sync.set({ settings: DEFAULT_SETTINGS });
+  } else {
+    // Migrate existing settings to include new fields
+    const settings = result.settings;
+    let needsUpdate = false;
+
+    if (settings.paused === undefined) {
+      settings.paused = false;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      console.log('Migrating settings to include new fields');
+      await chrome.storage.sync.set({ settings });
+    }
   }
 
   // Start alarms
@@ -36,6 +50,13 @@ chrome.runtime.onStartup.addListener(async () => {
   const result = await chrome.storage.sync.get('settings');
   if (!result.settings) {
     await chrome.storage.sync.set({ settings: DEFAULT_SETTINGS });
+  } else {
+    // Ensure paused field exists in existing settings
+    const settings = result.settings;
+    if (settings.paused === undefined) {
+      settings.paused = false;
+      await chrome.storage.sync.set({ settings });
+    }
   }
   await startAlarms();
 });

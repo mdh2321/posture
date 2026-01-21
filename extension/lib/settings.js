@@ -1,5 +1,7 @@
 // Shared settings module
 // Default settings used across the extension
+// This file is imported via importScripts() in service worker
+// and used directly in options/popup pages
 
 const DEFAULT_SETTINGS = {
   intervals: {
@@ -19,7 +21,5 @@ const DEFAULT_SETTINGS = {
   }
 };
 
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { DEFAULT_SETTINGS };
-}
+// In Chrome extensions, importScripts() makes variables globally available
+// No need for module.exports pattern
