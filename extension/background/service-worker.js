@@ -229,35 +229,6 @@ async function showPostureReminder(config) {
   }, 10000);
 }
 
-// Generate a simple SVG icon for stretch notifications
-function generateStretchIcon(category) {
-  // Color scheme based on category
-  const colors = {
-    'neck': '#FF6B6B',
-    'shoulder': '#4ECDC4',
-    'neck-shoulder': '#95E1D3',
-    'chest': '#F38181',
-    'back': '#AA96DA',
-    'wrist': '#FCBAD3'
-  };
-
-  const color = colors[category] || '#667eea';
-
-  // Simple SVG with category indicator
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
-      <rect width="200" height="200" fill="${color}" rx="10"/>
-      <circle cx="100" cy="80" r="30" fill="white" opacity="0.9"/>
-      <circle cx="70" cy="120" r="15" fill="white" opacity="0.8"/>
-      <circle cx="130" cy="120" r="15" fill="white" opacity="0.8"/>
-      <circle cx="100" cy="150" r="20" fill="white" opacity="0.8"/>
-      <text x="100" y="185" font-size="14" fill="white" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold">${category.toUpperCase()}</text>
-    </svg>
-  `;
-
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
-}
-
 // Show stretch reminder with a random stretch
 async function showStretchReminder(config) {
   console.log('showStretchReminder called with config:', config);
@@ -284,14 +255,10 @@ async function showStretchReminder(config) {
 
   const message = `${stretch.name}\n\n${stretch.description}\n\nDuration: ${stretch.duration}s • ${stretch.difficulty}`;
 
-  // Generate a visual icon for the stretch category
-  const stretchImage = generateStretchIcon(stretch.category);
-
   try {
     const createdId = await chrome.notifications.create(notificationId, {
-      type: 'image',
+      type: 'basic',
       iconUrl: '../assets/icons/icon128.png',
-      imageUrl: stretchImage,
       title: '🧘 Stretch Break Time!',
       message: message,
       priority: 2,
