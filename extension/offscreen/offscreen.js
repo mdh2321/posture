@@ -1,5 +1,16 @@
 // Offscreen document for playing audio in Manifest V3
 
+// Reuse a single AudioContext to avoid resource leaks
+let audioContext = null;
+
+function getAudioContext() {
+  if (!audioContext) {
+    audioContext = new AudioContext();
+    console.log('AudioContext created');
+  }
+  return audioContext;
+}
+
 // Listen for messages from the service worker
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'playSound') {
@@ -13,15 +24,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function playSound(soundType, volume = 0.7) {
   console.log(`Playing ${soundType} at volume ${volume}`);
 
-  const audioContext = new AudioContext();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-
-  // Set volume
-  gainNode.gain.value = volume;
+  const ctx = getAudioContext();
 
   // Different sounds for different notification types
   if (soundType === 'posture-chime') {
@@ -33,17 +36,17 @@ function playSound(soundType, volume = 0.7) {
     ];
 
     notes.forEach(note => {
-      const osc = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
 
       osc.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      gainNode.connect(ctx.destination);
 
       osc.frequency.value = note.freq;
       osc.type = 'sine'; // Smooth, soft sine wave
 
       // Soft attack and decay
-      const startTime = audioContext.currentTime + note.time;
+      const startTime = ctx.currentTime + note.time;
       const endTime = startTime + note.duration;
 
       gainNode.gain.setValueAtTime(0, startTime);
@@ -63,17 +66,17 @@ function playSound(soundType, volume = 0.7) {
     ];
 
     notes.forEach(note => {
-      const osc = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
 
       osc.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      gainNode.connect(ctx.destination);
 
       osc.frequency.value = note.freq;
       osc.type = 'sine'; // Smooth, soft sine wave
 
       // Soft attack and decay
-      const startTime = audioContext.currentTime + note.time;
+      const startTime = ctx.currentTime + note.time;
       const endTime = startTime + note.duration;
 
       gainNode.gain.setValueAtTime(0, startTime);

@@ -1,5 +1,21 @@
 // STRETCHES array is loaded from ../lib/stretches.js via script tag in HTML
 
+// Check notification permission and show warning if needed
+async function checkNotificationPermission() {
+  try {
+    const permission = await chrome.notifications.getPermissionLevel();
+    const warningElement = document.getElementById('permissionWarning');
+
+    if (permission !== 'granted') {
+      warningElement.style.display = 'block';
+    } else {
+      warningElement.style.display = 'none';
+    }
+  } catch (error) {
+    console.error('Error checking notification permission:', error);
+  }
+}
+
 // Initialize stretch list rendering
 function loadStretches() {
   // STRETCHES is already available from the script tag
@@ -34,6 +50,10 @@ async function loadSettings() {
 
 // Save settings
 async function saveSettings() {
+  // Get current settings to preserve enabled and paused states
+  const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
+  const currentSettings = response.settings;
+
   const settings = {
     intervals: {
       postureCheck: parseInt(document.getElementById('postureInterval').value),
@@ -43,7 +63,9 @@ async function saveSettings() {
       enabled: document.getElementById('enableAudio').checked,
       volume: parseInt(document.getElementById('volume').value) / 100
     },
-    enabled: true, // Always enabled unless manually paused from popup
+    // Preserve enabled and paused states from current settings
+    enabled: currentSettings ? currentSettings.enabled : true,
+    paused: currentSettings ? currentSettings.paused : false,
     workingHours: {
       enabled: document.getElementById('enableWorkingHours').checked,
       start: document.getElementById('workHoursStart').value,
@@ -70,6 +92,7 @@ async function resetSettings() {
     return;
   }
 
+  // Use shared default settings (matching lib/settings.js)
   const defaultSettings = {
     intervals: {
       postureCheck: 10,
@@ -80,6 +103,7 @@ async function resetSettings() {
       volume: 0.7
     },
     enabled: true,
+    paused: false,
     workingHours: {
       enabled: false,
       start: '09:00',
@@ -189,3 +213,4 @@ document.getElementById('testStretchSound').addEventListener('click', () => test
 // Initialize
 loadSettings();
 loadStretches();
+checkNotificationPermission();

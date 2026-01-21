@@ -1,28 +1,11 @@
-// Import stretch library
-importScripts('../lib/stretches.js');
-
-// Default settings
-const DEFAULT_SETTINGS = {
-  intervals: {
-    postureCheck: 10, // minutes
-    stretchReminder: 30 // minutes
-  },
-  audio: {
-    enabled: true,
-    volume: 0.7
-  },
-  enabled: true,
-  workingHours: {
-    enabled: false,
-    start: '09:00',
-    end: '17:00'
-  }
-};
+// Import stretch library and settings
+importScripts('../lib/stretches.js', '../lib/settings.js');
 
 // Alarm names
 const ALARMS = {
   POSTURE: 'posture-check',
-  STRETCH: 'stretch-reminder'
+  STRETCH: 'stretch-reminder',
+  WORKING_HOURS_CHECK: 'check-working-hours'
 };
 
 // Initialize extension on install
@@ -41,6 +24,20 @@ chrome.runtime.onInstalled.addListener(async () => {
   if (!result.settings) {
     console.log('Initializing default settings');
     await chrome.storage.sync.set({ settings: DEFAULT_SETTINGS });
+  } else {
+    // Migrate existing settings to include new fields
+    const settings = result.settings;
+    let needsUpdate = false;
+
+    if (settings.paused === undefined) {
+      settings.paused = false;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      console.log('Migrating settings to include new fields');
+      await chrome.storage.sync.set({ settings });
+    }
   }
 
   // Start alarms
@@ -53,6 +50,13 @@ chrome.runtime.onStartup.addListener(async () => {
   const result = await chrome.storage.sync.get('settings');
   if (!result.settings) {
     await chrome.storage.sync.set({ settings: DEFAULT_SETTINGS });
+  } else {
+    // Ensure paused field exists in existing settings
+    const settings = result.settings;
+    if (settings.paused === undefined) {
+      settings.paused = false;
+      await chrome.storage.sync.set({ settings });
+    }
   }
   await startAlarms();
 });
@@ -62,11 +66,14 @@ async function startAlarms() {
   const { settings } = await chrome.storage.sync.get('settings');
   const config = settings || DEFAULT_SETTINGS;
 
-  // Clear existing alarms
-  await chrome.alarms.clearAll();
+  // Clear only posture and stretch alarms (preserve working-hours check alarm)
+  await chrome.alarms.clear(ALARMS.POSTURE);
+  await chrome.alarms.clear(ALARMS.STRETCH);
 
-  if (!config.enabled) {
-    console.log('Extension disabled, not starting alarms');
+  // Check if extension is enabled (considering both enabled and paused states)
+  const isEnabled = config.enabled && !config.paused;
+  if (!isEnabled) {
+    console.log('Extension disabled or paused, not starting alarms');
     return;
   }
 
@@ -88,13 +95,23 @@ async function startAlarms() {
     periodInMinutes: config.intervals.stretchReminder
   });
 
+  // Ensure working-hours check alarm exists
+  const workingHoursAlarm = await chrome.alarms.get(ALARMS.WORKING_HOURS_CHECK);
+  if (!workingHoursAlarm) {
+    chrome.alarms.create(ALARMS.WORKING_HOURS_CHECK, {
+      periodInMinutes: 1
+    });
+    console.log('Working hours check alarm created');
+  }
+
   console.log(`Alarms started: Posture every ${config.intervals.postureCheck}min, Stretch every ${config.intervals.stretchReminder}min`);
 }
 
-// Stop all alarms
+// Stop all alarms (except working-hours check)
 async function stopAlarms() {
-  await chrome.alarms.clearAll();
-  console.log('All alarms stopped');
+  await chrome.alarms.clear(ALARMS.POSTURE);
+  await chrome.alarms.clear(ALARMS.STRETCH);
+  console.log('Posture and stretch alarms stopped');
 }
 
 // Check if current time is within working hours
@@ -107,11 +124,35 @@ function isWithinWorkingHours(workingHours) {
 
 // Handle alarm triggers
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+  // Handle working hours check alarm separately
+  if (alarm.name === ALARMS.WORKING_HOURS_CHECK) {
+    const { settings } = await chrome.storage.sync.get('settings');
+    const config = settings || DEFAULT_SETTINGS;
+
+    if (config.workingHours.enabled) {
+      const withinHours = isWithinWorkingHours(config.workingHours);
+      const alarmsExist = await chrome.alarms.get(ALARMS.POSTURE);
+
+      // Start alarms if we just entered working hours
+      if (withinHours && !alarmsExist && config.enabled && !config.paused) {
+        console.log('Entered working hours, starting alarms');
+        startAlarms();
+      }
+      // Stop alarms if we just left working hours
+      else if (!withinHours && alarmsExist) {
+        console.log('Left working hours, stopping alarms');
+        stopAlarms();
+      }
+    }
+    return;
+  }
+
+  // Handle posture and stretch alarms
   const { settings } = await chrome.storage.sync.get('settings');
   const config = settings || DEFAULT_SETTINGS;
 
-  // Check if extension is enabled
-  if (!config.enabled) {
+  // Check if extension is enabled and not paused
+  if (!config.enabled || config.paused) {
     return;
   }
 
@@ -133,14 +174,16 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 // Posture reminder messages (rotated for variety)
 const POSTURE_MESSAGES = [
-  "Quick posture check",
+  "Check your posture",
+  "Sit up straight",
   "Shoulders back, chin level",
-  "How's your posture looking?",
-  "Straighten that spine",
-  "Time to straighten up",
-  "Sit up tall",
+  "Straighten your spine",
   "How's that posture?",
-  "Align your spine"
+  "Roll your shoulders back",
+  "Align your neck and spine",
+  "Lengthen your spine",
+  "Pull your shoulders down",
+  "Tuck your chin slightly"
 ];
 
 // Show posture check reminder
@@ -186,6 +229,35 @@ async function showPostureReminder(config) {
   }, 10000);
 }
 
+// Generate a simple SVG icon for stretch notifications
+function generateStretchIcon(category) {
+  // Color scheme based on category
+  const colors = {
+    'neck': '#FF6B6B',
+    'shoulder': '#4ECDC4',
+    'neck-shoulder': '#95E1D3',
+    'chest': '#F38181',
+    'back': '#AA96DA',
+    'wrist': '#FCBAD3'
+  };
+
+  const color = colors[category] || '#667eea';
+
+  // Simple SVG with category indicator
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+      <rect width="200" height="200" fill="${color}" rx="10"/>
+      <circle cx="100" cy="80" r="30" fill="white" opacity="0.9"/>
+      <circle cx="70" cy="120" r="15" fill="white" opacity="0.8"/>
+      <circle cx="130" cy="120" r="15" fill="white" opacity="0.8"/>
+      <circle cx="100" cy="150" r="20" fill="white" opacity="0.8"/>
+      <text x="100" y="185" font-size="14" fill="white" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold">${category.toUpperCase()}</text>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
 // Show stretch reminder with a random stretch
 async function showStretchReminder(config) {
   console.log('showStretchReminder called with config:', config);
@@ -210,13 +282,17 @@ async function showStretchReminder(config) {
 
   const notificationId = `stretch-${Date.now()}`;
 
-  const message = `Time for a stretch break!\n\n${stretch.name}\n${stretch.description}`;
+  const message = `${stretch.name}\n\n${stretch.description}\n\nDuration: ${stretch.duration}s • ${stretch.difficulty}`;
+
+  // Generate a visual icon for the stretch category
+  const stretchImage = generateStretchIcon(stretch.category);
 
   try {
     const createdId = await chrome.notifications.create(notificationId, {
-      type: 'basic',
+      type: 'image',
       iconUrl: '../assets/icons/icon128.png',
-      title: 'Stretch Break',
+      imageUrl: stretchImage,
+      title: '🧘 Stretch Break Time!',
       message: message,
       priority: 2,
       requireInteraction: false,
@@ -263,6 +339,19 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
 
     // Clear the notification
     chrome.notifications.clear(notificationId);
+
+    // Clean up storage entry
+    await chrome.storage.local.remove(key);
+    console.log('Cleaned up storage for:', key);
+  }
+});
+
+// Handle notification close (cleanup storage)
+chrome.notifications.onClosed.addListener(async (notificationId, byUser) => {
+  if (notificationId.startsWith('stretch-')) {
+    const key = `stretch-${notificationId}`;
+    await chrome.storage.local.remove(key);
+    console.log('Cleaned up storage for closed notification:', key);
   }
 });
 
@@ -320,16 +409,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'toggleEnabled':
           const result1 = await chrome.storage.sync.get('settings');
           const settings = result1.settings || DEFAULT_SETTINGS;
-          settings.enabled = !settings.enabled;
+          // Toggle paused state instead of enabled
+          settings.paused = !settings.paused;
           await chrome.storage.sync.set({ settings });
 
-          if (settings.enabled) {
+          // Start or stop alarms based on paused state
+          if (!settings.paused && settings.enabled) {
             await startAlarms();
           } else {
             await stopAlarms();
           }
 
-          sendResponse({ enabled: settings.enabled });
+          // Return the effective enabled state (enabled && !paused)
+          sendResponse({ enabled: settings.enabled && !settings.paused });
           break;
 
         case 'updateSettings':
@@ -388,34 +480,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   })();
 
   return true; // Keep message channel open for async response
-});
-
-// Check working hours periodically and restart alarms if needed
-chrome.alarms.create('check-working-hours', {
-  periodInMinutes: 1
-});
-
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'check-working-hours') {
-    const { settings } = await chrome.storage.sync.get('settings');
-    const config = settings || DEFAULT_SETTINGS;
-
-    if (config.workingHours.enabled) {
-      const withinHours = isWithinWorkingHours(config.workingHours);
-      const alarmsExist = await chrome.alarms.get(ALARMS.POSTURE);
-
-      // Start alarms if we just entered working hours
-      if (withinHours && !alarmsExist && config.enabled) {
-        console.log('Entered working hours, starting alarms');
-        startAlarms();
-      }
-      // Stop alarms if we just left working hours
-      else if (!withinHours && alarmsExist) {
-        console.log('Left working hours, stopping alarms');
-        stopAlarms();
-      }
-    }
-  }
 });
 
 console.log('Service worker loaded');
