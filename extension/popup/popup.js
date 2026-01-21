@@ -1,3 +1,19 @@
+// Check notification permission and show warning if needed
+async function checkNotificationPermission() {
+  try {
+    const permission = await chrome.notifications.getPermissionLevel();
+    const warningElement = document.getElementById('permissionWarning');
+
+    if (permission !== 'granted') {
+      warningElement.style.display = 'block';
+    } else {
+      warningElement.style.display = 'none';
+    }
+  } catch (error) {
+    console.error('Error checking notification permission:', error);
+  }
+}
+
 // Load current settings and update UI
 async function loadSettings() {
   try {
@@ -14,21 +30,25 @@ async function loadSettings() {
     const settings = response.settings;
     console.log('Settings loaded:', settings);
 
-  // Update status indicator
-  updateStatus(settings.enabled);
+    // Update status indicator (effective enabled state = enabled && !paused)
+    const effectiveEnabled = settings.enabled && !settings.paused;
+    updateStatus(effectiveEnabled);
 
-  // Update interval displays
-  document.getElementById('postureInterval').textContent = `Every ${settings.intervals.postureCheck} min`;
-  document.getElementById('stretchInterval').textContent = `Every ${settings.intervals.stretchReminder} min`;
+    // Update interval displays
+    document.getElementById('postureInterval').textContent = `Every ${settings.intervals.postureCheck} min`;
+    document.getElementById('stretchInterval').textContent = `Every ${settings.intervals.stretchReminder} min`;
 
-  // Update working hours display
-  if (settings.workingHours.enabled) {
-    document.getElementById('workingHoursRow').style.display = 'flex';
-    document.getElementById('workingHours').textContent =
-      `${settings.workingHours.start} - ${settings.workingHours.end}`;
-  } else {
-    document.getElementById('workingHoursRow').style.display = 'none';
-  }
+    // Update working hours display
+    if (settings.workingHours.enabled) {
+      document.getElementById('workingHoursRow').style.display = 'flex';
+      document.getElementById('workingHours').textContent =
+        `${settings.workingHours.start} - ${settings.workingHours.end}`;
+    } else {
+      document.getElementById('workingHoursRow').style.display = 'none';
+    }
+
+    // Check notification permission
+    await checkNotificationPermission();
   } catch (error) {
     console.error('Error loading settings:', error);
     // Show default state

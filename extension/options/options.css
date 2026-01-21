@@ -56,6 +56,28 @@ header h1 {
   padding: 30px;
 }
 
+.permission-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 25px;
+}
+
+.permission-warning strong {
+  display: block;
+  color: #856404;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.permission-warning p {
+  color: #856404;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+}
+
 .section {
   margin-bottom: 40px;
   padding-bottom: 30px;
