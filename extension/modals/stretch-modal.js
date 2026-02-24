@@ -108,5 +108,40 @@ document.getElementById('skipBtn').addEventListener('click', () => {
   window.close();
 });
 
-// Load stretch on page load
-loadStretch();
+// Focus trap — cycle through focusable elements with Tab
+function setupFocusTrap() {
+  const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      window.close();
+      return;
+    }
+
+    if (e.key !== 'Tab') return;
+
+    const focusable = Array.from(document.querySelectorAll(focusableSelector));
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+}
+
+// Load stretch on page load, then auto-focus Start Timer button
+loadStretch().then(() => {
+  document.getElementById('startTimerBtn').focus();
+});
+setupFocusTrap();

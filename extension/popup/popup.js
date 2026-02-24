@@ -47,6 +47,9 @@ async function loadSettings() {
       document.getElementById('workingHoursRow').style.display = 'none';
     }
 
+    // Update theme button
+    updateThemeButton(settings.theme || 'system');
+
     // Check notification permission
     await checkNotificationPermission();
   } catch (error) {
@@ -94,11 +97,11 @@ document.getElementById('testPostureBtn').addEventListener('click', async () => 
   console.log('Test posture response:', response);
 });
 
-// Test stretch notification
+// Test movement break (alternates between tip and stretch)
 document.getElementById('testStretchBtn').addEventListener('click', async () => {
-  console.log('Test stretch button clicked');
-  const response = await chrome.runtime.sendMessage({ action: 'testStretchNotification' });
-  console.log('Test stretch response:', response);
+  console.log('Test movement break button clicked');
+  const response = await chrome.runtime.sendMessage({ action: 'testMovementBreak' });
+  console.log('Test movement break response:', response);
 });
 
 // Open settings page
@@ -107,5 +110,40 @@ document.getElementById('settingsLink').addEventListener('click', (e) => {
   chrome.runtime.openOptionsPage();
 });
 
-// Load settings on popup open
+// Theme toggle — cycles light → dark → system
+const themeOrder = ['light', 'dark', 'system'];
+const themeIcons = { light: '☀️', dark: '🌙', system: '💻' };
+
+function updateThemeButton(theme) {
+  document.getElementById('themeToggleBtn').textContent = themeIcons[theme] || '💻';
+}
+
+document.getElementById('themeToggleBtn').addEventListener('click', async () => {
+  const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
+  const settings = response.settings;
+  const currentTheme = settings.theme || 'system';
+  const nextIndex = (themeOrder.indexOf(currentTheme) + 1) % themeOrder.length;
+  const nextTheme = themeOrder[nextIndex];
+  settings.theme = nextTheme;
+  await chrome.runtime.sendMessage({ action: 'updateSettings', settings });
+  updateThemeButton(nextTheme);
+});
+
+// Load stats
+async function loadStats() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getStats' });
+    if (response && response.stats) {
+      const today = new Date().toISOString().split('T')[0];
+      const todayCount = response.stats.dailyCounts[today] || 0;
+      document.getElementById('todayCount').textContent = todayCount;
+      document.getElementById('currentStreak').textContent = `${response.stats.currentStreak} day${response.stats.currentStreak !== 1 ? 's' : ''}`;
+    }
+  } catch (error) {
+    console.error('Error loading stats:', error);
+  }
+}
+
+// Load settings and stats on popup open
 loadSettings();
+loadStats();

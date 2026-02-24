@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Posture Check - Settings</title>
+  <link rel="stylesheet" href="../lib/theme.css">
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
@@ -20,10 +21,25 @@
 
     <div class="content">
       <!-- Notification Permission Warning -->
-      <div id="permissionWarning" class="permission-warning" style="display: none;">
+      <div id="permissionWarning" class="permission-warning" role="alert" style="display: none;">
         <strong>⚠️ Notifications Disabled</strong>
         <p>This extension requires notification permissions to show reminders. Please enable notifications in your browser settings.</p>
       </div>
+
+      <!-- Appearance -->
+      <section class="section">
+        <h2>🎨 Appearance</h2>
+
+        <div class="setting-group">
+          <label>Theme</label>
+          <div class="theme-selector">
+            <button type="button" class="theme-option" data-theme="light">Light</button>
+            <button type="button" class="theme-option" data-theme="dark">Dark</button>
+            <button type="button" class="theme-option active" data-theme="system">System</button>
+          </div>
+          <p class="help-text">Choose your preferred color scheme</p>
+        </div>
+      </section>
 
       <!-- Reminder Intervals -->
       <section class="section">
@@ -39,12 +55,12 @@
         </div>
 
         <div class="setting-group">
-          <label for="stretchInterval">Stretch Break Reminder</label>
+          <label for="stretchInterval">Movement Break Reminder</label>
           <div class="input-group">
             <input type="number" id="stretchInterval" min="15" max="120" step="5" value="30">
             <span class="unit">minutes</span>
           </div>
-          <p class="help-text">How often to remind you to take a stretch break</p>
+          <p class="help-text">How often to remind you to take a movement break</p>
         </div>
       </section>
 
@@ -54,7 +70,7 @@
 
         <div class="setting-group">
           <label class="checkbox-label">
-            <input type="checkbox" id="enableWorkingHours">
+            <input type="checkbox" id="enableWorkingHours" aria-expanded="false" aria-controls="workingHoursSettings">
             <span>Enable working hours schedule</span>
           </label>
           <p class="help-text">Only show reminders during specific hours</p>
@@ -79,7 +95,7 @@
 
         <div class="setting-group">
           <label class="checkbox-label">
-            <input type="checkbox" id="enableAudio" checked>
+            <input type="checkbox" id="enableAudio" checked aria-expanded="true" aria-controls="audioSettings">
             <span>Enable notification sounds</span>
           </label>
           <p class="help-text">Play a gentle chime with each reminder</p>
@@ -156,10 +172,12 @@
     <footer>
       <button id="saveBtn" class="btn btn-primary">Save Settings</button>
       <button id="resetBtn" class="btn btn-secondary">Reset to Defaults</button>
-      <div id="saveMessage" class="save-message" style="display: none;">✓ Settings saved!</div>
+      <div id="saveMessage" class="save-message" role="status" aria-live="polite" style="display: none;">✓ Settings saved!</div>
     </footer>
   </div>
 
+  <script src="../lib/theme-provider.js"></script>
+  <script src="../lib/settings.js"></script>
   <script src="../lib/stretches.js"></script>
   <script src="options.js"></script>
 </body>

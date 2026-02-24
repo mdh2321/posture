@@ -18,7 +18,8 @@ const DEFAULT_SETTINGS = {
     enabled: false,
     start: '09:00',
     end: '17:00'
-  }
+  },
+  theme: 'system'
 };
 
 // In Chrome extensions, importScripts() makes variables globally available

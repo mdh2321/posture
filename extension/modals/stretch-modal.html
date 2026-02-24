@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stretch Instructions</title>
+  <link rel="stylesheet" href="../lib/theme.css">
   <link rel="stylesheet" href="stretch-modal.css">
 </head>
 <body>
   <div class="container">
     <header>
       <h1 id="stretchName">Loading...</h1>
-      <button id="closeBtn" class="close-btn">✕</button>
+      <button id="closeBtn" class="close-btn" aria-label="Close">✕</button>
     </header>
 
     <div class="content">
@@ -35,7 +36,7 @@
       </div>
 
       <div class="timer">
-        <div class="timer-display" id="timerDisplay">0:30</div>
+        <div class="timer-display" id="timerDisplay" role="timer" aria-live="assertive">0:30</div>
         <button id="startTimerBtn" class="btn btn-primary">Start Timer</button>
       </div>
     </div>
@@ -46,6 +47,7 @@
     </footer>
   </div>
 
+  <script src="../lib/theme-provider.js"></script>
   <script src="stretch-modal.js"></script>
 </body>
 </html>

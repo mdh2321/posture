@@ -31,6 +31,9 @@ async function loadSettings() {
   const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
   const settings = response.settings;
 
+  // Theme
+  updateThemeSelector(settings.theme || 'system');
+
   // Interval settings
   document.getElementById('postureInterval').value = settings.intervals.postureCheck;
   document.getElementById('stretchInterval').value = settings.intervals.stretchReminder;
@@ -48,8 +51,42 @@ async function loadSettings() {
   toggleAudioSettings(settings.audio.enabled);
 }
 
+// Validate settings before saving
+function validateSettings() {
+  const postureInterval = parseInt(document.getElementById('postureInterval').value);
+  const stretchInterval = parseInt(document.getElementById('stretchInterval').value);
+  const volume = parseInt(document.getElementById('volume').value);
+  const workingHoursEnabled = document.getElementById('enableWorkingHours').checked;
+  const start = document.getElementById('workHoursStart').value;
+  const end = document.getElementById('workHoursEnd').value;
+
+  // Clamp intervals
+  document.getElementById('postureInterval').value = Math.max(5, Math.min(60, postureInterval || 10));
+  document.getElementById('stretchInterval').value = Math.max(15, Math.min(120, stretchInterval || 30));
+  document.getElementById('volume').value = Math.max(0, Math.min(100, volume || 70));
+  updateVolumeDisplay();
+
+  // Validate working hours
+  if (workingHoursEnabled && start >= end) {
+    const saveMessage = document.getElementById('saveMessage');
+    saveMessage.textContent = 'Start time must be before end time';
+    saveMessage.style.color = '#e53935';
+    saveMessage.style.display = 'block';
+    setTimeout(() => {
+      saveMessage.style.color = '';
+      saveMessage.textContent = '\u2713 Settings saved!';
+      saveMessage.style.display = 'none';
+    }, 3000);
+    return false;
+  }
+
+  return true;
+}
+
 // Save settings
 async function saveSettings() {
+  if (!validateSettings()) return;
+
   // Get current settings to preserve enabled and paused states
   const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
   const currentSettings = response.settings;
@@ -70,7 +107,8 @@ async function saveSettings() {
       enabled: document.getElementById('enableWorkingHours').checked,
       start: document.getElementById('workHoursStart').value,
       end: document.getElementById('workHoursEnd').value
-    }
+    },
+    theme: getSelectedTheme()
   };
 
   await chrome.runtime.sendMessage({
@@ -92,28 +130,9 @@ async function resetSettings() {
     return;
   }
 
-  // Use shared default settings (matching lib/settings.js)
-  const defaultSettings = {
-    intervals: {
-      postureCheck: 10,
-      stretchReminder: 30
-    },
-    audio: {
-      enabled: true,
-      volume: 0.7
-    },
-    enabled: true,
-    paused: false,
-    workingHours: {
-      enabled: false,
-      start: '09:00',
-      end: '17:00'
-    }
-  };
-
   await chrome.runtime.sendMessage({
     action: 'updateSettings',
-    settings: defaultSettings
+    settings: { ...DEFAULT_SETTINGS }
   });
 
   // Reload settings display
@@ -133,12 +152,14 @@ async function resetSettings() {
 function toggleWorkingHoursSettings(enabled) {
   const settingsDiv = document.getElementById('workingHoursSettings');
   settingsDiv.style.display = enabled ? 'block' : 'none';
+  document.getElementById('enableWorkingHours').setAttribute('aria-expanded', String(enabled));
 }
 
 // Toggle audio settings visibility
 function toggleAudioSettings(enabled) {
   const settingsDiv = document.getElementById('audioSettings');
   settingsDiv.style.display = enabled ? 'block' : 'none';
+  document.getElementById('enableAudio').setAttribute('aria-expanded', String(enabled));
 }
 
 // Update volume display
@@ -209,6 +230,25 @@ document.getElementById('enableAudio').addEventListener('change', (e) => {
 document.getElementById('volume').addEventListener('input', updateVolumeDisplay);
 document.getElementById('testPostureSound').addEventListener('click', () => testSound('posture-chime'));
 document.getElementById('testStretchSound').addEventListener('click', () => testSound('stretch-bell'));
+
+// Theme helpers
+function getSelectedTheme() {
+  const active = document.querySelector('.theme-option.active');
+  return active ? active.dataset.theme : 'system';
+}
+
+function updateThemeSelector(theme) {
+  document.querySelectorAll('.theme-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === theme);
+  });
+}
+
+// Theme selector event listeners
+document.querySelectorAll('.theme-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    updateThemeSelector(btn.dataset.theme);
+  });
+});
 
 // Initialize
 loadSettings();

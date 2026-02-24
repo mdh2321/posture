@@ -9,7 +9,9 @@
   <p>Open DevTools Console and run the script below to download icons.</p>
 
   <canvas id="canvas16" width="16" height="16" style="border: 1px solid black; margin: 5px;"></canvas>
+  <canvas id="canvas32" width="32" height="32" style="border: 1px solid black; margin: 5px;"></canvas>
   <canvas id="canvas48" width="48" height="48" style="border: 1px solid black; margin: 5px;"></canvas>
+  <canvas id="canvas96" width="96" height="96" style="border: 1px solid black; margin: 5px;"></canvas>
   <canvas id="canvas128" width="128" height="128" style="border: 1px solid black; margin: 5px;"></canvas>
 
   <br>
@@ -58,7 +60,7 @@
     }
 
     function generateIcons() {
-      [16, 48, 128].forEach(size => {
+      [16, 32, 48, 96, 128].forEach(size => {
         const canvas = document.getElementById(`canvas${size}`);
         drawIcon(canvas, size);
 
@@ -79,7 +81,9 @@
     // Auto-draw on load
     window.onload = () => {
       drawIcon(document.getElementById('canvas16'), 16);
+      drawIcon(document.getElementById('canvas32'), 32);
       drawIcon(document.getElementById('canvas48'), 48);
+      drawIcon(document.getElementById('canvas96'), 96);
       drawIcon(document.getElementById('canvas128'), 128);
     };
   </script>

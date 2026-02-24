@@ -1,5 +1,39 @@
 // Import stretch library and settings
-importScripts('../lib/stretches.js', '../lib/settings.js');
+importScripts('../lib/stretches.js', '../lib/settings.js', '../lib/movement-tips.js');
+
+// Track notification auto-dismiss timeouts so they can be cancelled on manual close
+const notificationTimeouts = new Map();
+
+// Cached settings helper (2-second TTL)
+let _settingsCache = null;
+let _settingsCacheTime = 0;
+const SETTINGS_CACHE_TTL = 2000;
+
+async function getSettings() {
+  const now = Date.now();
+  if (_settingsCache && (now - _settingsCacheTime) < SETTINGS_CACHE_TTL) {
+    return _settingsCache;
+  }
+  const result = await chrome.storage.sync.get('settings');
+  _settingsCache = result.settings || DEFAULT_SETTINGS;
+  _settingsCacheTime = now;
+  return _settingsCache;
+}
+
+function invalidateSettingsCache() {
+  _settingsCache = null;
+  _settingsCacheTime = 0;
+}
+
+// Invalidate cache when settings change
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'sync' && changes.settings) {
+    invalidateSettingsCache();
+  }
+});
+
+// Stretch icon cache
+const _stretchIconCache = {};
 
 // Alarm names
 const ALARMS = {
@@ -34,6 +68,11 @@ chrome.runtime.onInstalled.addListener(async () => {
       needsUpdate = true;
     }
 
+    if (settings.theme === undefined) {
+      settings.theme = 'system';
+      needsUpdate = true;
+    }
+
     if (needsUpdate) {
       console.log('Migrating settings to include new fields');
       await chrome.storage.sync.set({ settings });
@@ -63,8 +102,7 @@ chrome.runtime.onStartup.addListener(async () => {
 
 // Start all alarms based on current settings
 async function startAlarms() {
-  const { settings } = await chrome.storage.sync.get('settings');
-  const config = settings || DEFAULT_SETTINGS;
+  const config = await getSettings();
 
   // Clear only posture and stretch alarms (preserve working-hours check alarm)
   await chrome.alarms.clear(ALARMS.POSTURE);
@@ -126,8 +164,7 @@ function isWithinWorkingHours(workingHours) {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   // Handle working hours check alarm separately
   if (alarm.name === ALARMS.WORKING_HOURS_CHECK) {
-    const { settings } = await chrome.storage.sync.get('settings');
-    const config = settings || DEFAULT_SETTINGS;
+    const config = await getSettings();
 
     if (config.workingHours.enabled) {
       const withinHours = isWithinWorkingHours(config.workingHours);
@@ -148,8 +185,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 
   // Handle posture and stretch alarms
-  const { settings } = await chrome.storage.sync.get('settings');
-  const config = settings || DEFAULT_SETTINGS;
+  const config = await getSettings();
 
   // Check if extension is enabled and not paused
   if (!config.enabled || config.paused) {
@@ -167,7 +203,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       showPostureReminder(config);
       break;
     case ALARMS.STRETCH:
-      showStretchReminder(config);
+      showMovementBreak(config);
       break;
   }
 });
@@ -207,7 +243,7 @@ async function showPostureReminder(config) {
   try {
     const createdId = await chrome.notifications.create(notificationId, {
       type: 'basic',
-      iconUrl: '../assets/icons/icon128.png',
+      iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
       title: 'Posture Check',
       message: message,
       priority: 1,
@@ -224,13 +260,19 @@ async function showPostureReminder(config) {
   }
 
   // Auto-dismiss after 10 seconds
-  setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     chrome.notifications.clear(notificationId);
+    notificationTimeouts.delete(notificationId);
   }, 10000);
+  notificationTimeouts.set(notificationId, timeoutId);
 }
 
-// Generate a simple SVG icon for stretch notifications
+// Generate a simple SVG icon for stretch notifications (cached)
 function generateStretchIcon(category) {
+  if (_stretchIconCache[category]) {
+    return _stretchIconCache[category];
+  }
+
   // Color scheme based on category
   const colors = {
     'neck': '#FF6B6B',
@@ -255,7 +297,66 @@ function generateStretchIcon(category) {
     </svg>
   `;
 
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  const dataUrl = `data:image/svg+xml;base64,${btoa(svg)}`;
+  _stretchIconCache[category] = dataUrl;
+  return dataUrl;
+}
+
+// Dispatcher: alternate between movement tip and stretch suggestion
+async function showMovementBreak(config) {
+  const { lastBreakType = 'stretch' } = await chrome.storage.local.get('lastBreakType');
+  const nextType = lastBreakType === 'stretch' ? 'tip' : 'stretch';
+  await chrome.storage.local.set({ lastBreakType: nextType });
+
+  if (nextType === 'tip') {
+    await showMovementTipNotification(config);
+  } else {
+    await showStretchReminder(config);
+  }
+}
+
+// Show a simple movement tip notification
+async function showMovementTipNotification(config) {
+  const permission = await chrome.notifications.getPermissionLevel();
+  if (permission !== 'granted') {
+    console.error('Cannot show notification - permission not granted!');
+    return;
+  }
+
+  const { recentMovementTips = [] } = await chrome.storage.local.get('recentMovementTips');
+  const tip = getRandomMovementTip(recentMovementTips);
+
+  const updatedRecent = [tip.id, ...recentMovementTips.slice(0, 4)];
+  await chrome.storage.local.set({ recentMovementTips: updatedRecent });
+
+  const notificationId = `movtip-${Date.now()}`;
+
+  try {
+    await chrome.notifications.create(notificationId, {
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
+      title: '\ud83d\udeb6 Movement Break',
+      message: tip.message,
+      priority: 2,
+      requireInteraction: false,
+      buttons: [
+        { title: 'Done' }
+      ]
+    });
+    console.log('Movement tip notification created:', notificationId);
+  } catch (error) {
+    console.error('Error creating movement tip notification:', error);
+  }
+
+  if (config.audio.enabled) {
+    await playSound('posture-chime', config.audio.volume);
+  }
+
+  const timeoutId = setTimeout(() => {
+    chrome.notifications.clear(notificationId);
+    notificationTimeouts.delete(notificationId);
+  }, 15000);
+  notificationTimeouts.set(notificationId, timeoutId);
 }
 
 // Show stretch reminder with a random stretch
@@ -290,7 +391,7 @@ async function showStretchReminder(config) {
   try {
     const createdId = await chrome.notifications.create(notificationId, {
       type: 'image',
-      iconUrl: '../assets/icons/icon128.png',
+      iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
       imageUrl: stretchImage,
       title: '🧘 Stretch Break Time!',
       message: message,
@@ -315,14 +416,28 @@ async function showStretchReminder(config) {
   }
 
   // Auto-dismiss after 30 seconds (increased from 15)
-  setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     chrome.notifications.clear(notificationId);
+    notificationTimeouts.delete(notificationId);
   }, 30000);
+  notificationTimeouts.set(notificationId, timeoutId);
 }
 
 // Handle notification button clicks
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
-  if (notificationId.startsWith('stretch-')) {
+  if (notificationId.startsWith('movtip-')) {
+    // Movement tip: button 0 = "Done"
+    if (buttonIndex === 0) {
+      console.log('Movement tip marked as done');
+      await recordCompletion();
+    }
+
+    chrome.notifications.clear(notificationId);
+    if (notificationTimeouts.has(notificationId)) {
+      clearTimeout(notificationTimeouts.get(notificationId));
+      notificationTimeouts.delete(notificationId);
+    }
+  } else if (notificationId.startsWith('stretch-')) {
     // Get stretch ID from storage
     const key = `stretch-${notificationId}`;
     const result = await chrome.storage.local.get(key);
@@ -334,11 +449,15 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
     } else if (buttonIndex === 1) {
       // "Done" button clicked
       console.log('Stretch marked as done:', stretchId);
-      // Future: Track completion
+      await recordCompletion();
     }
 
-    // Clear the notification
+    // Clear the notification and cancel auto-dismiss
     chrome.notifications.clear(notificationId);
+    if (notificationTimeouts.has(notificationId)) {
+      clearTimeout(notificationTimeouts.get(notificationId));
+      notificationTimeouts.delete(notificationId);
+    }
 
     // Clean up storage entry
     await chrome.storage.local.remove(key);
@@ -348,6 +467,12 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
 
 // Handle notification close (cleanup storage)
 chrome.notifications.onClosed.addListener(async (notificationId, byUser) => {
+  // Cancel auto-dismiss timeout on manual close
+  if (notificationTimeouts.has(notificationId)) {
+    clearTimeout(notificationTimeouts.get(notificationId));
+    notificationTimeouts.delete(notificationId);
+  }
+
   if (notificationId.startsWith('stretch-')) {
     const key = `stretch-${notificationId}`;
     await chrome.storage.local.remove(key);
@@ -400,86 +525,121 @@ async function playSound(soundType, volume = 0.7) {
   }
 }
 
-// Listen for messages from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // Handle async operations properly
-  (async () => {
-    try {
-      switch (request.action) {
-        case 'toggleEnabled':
-          const result1 = await chrome.storage.sync.get('settings');
-          const settings = result1.settings || DEFAULT_SETTINGS;
-          // Toggle paused state instead of enabled
-          settings.paused = !settings.paused;
-          await chrome.storage.sync.set({ settings });
+// Stats helpers
+async function getStats() {
+  const result = await chrome.storage.local.get('stats');
+  return result.stats || { totalCompleted: 0, dailyCounts: {}, currentStreak: 0, lastCompletionDate: null };
+}
 
-          // Start or stop alarms based on paused state
-          if (!settings.paused && settings.enabled) {
-            await startAlarms();
-          } else {
-            await stopAlarms();
-          }
+async function recordCompletion() {
+  const stats = await getStats();
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-          // Return the effective enabled state (enabled && !paused)
-          sendResponse({ enabled: settings.enabled && !settings.paused });
-          break;
+  stats.totalCompleted++;
+  stats.dailyCounts[today] = (stats.dailyCounts[today] || 0) + 1;
 
-        case 'updateSettings':
-          await chrome.storage.sync.set({ settings: request.settings });
-          await startAlarms(); // Restart with new settings
-          sendResponse({ success: true });
-          break;
-
-        case 'getSettings':
-          const result = await chrome.storage.sync.get('settings');
-          sendResponse({ settings: result.settings || DEFAULT_SETTINGS });
-          break;
-
-        case 'testPostureNotification':
-          const result2 = await chrome.storage.sync.get('settings');
-          await showPostureReminder(result2.settings || DEFAULT_SETTINGS);
-          sendResponse({ success: true });
-          break;
-
-        case 'testStretchNotification':
-          const result3 = await chrome.storage.sync.get('settings');
-          await showStretchReminder(result3.settings || DEFAULT_SETTINGS);
-          sendResponse({ success: true });
-          break;
-
-        case 'getStretchData':
-          const stretch = getStretchById(request.stretchId);
-          sendResponse({ stretch: stretch });
-          break;
-
-        case 'playCompletionSound':
-          const result4 = await chrome.storage.sync.get('settings');
-          const config = result4.settings || DEFAULT_SETTINGS;
-          await playSound('posture-chime', config.audio.volume);
-          sendResponse({ success: true });
-          break;
-
-        case 'stretchCompleted':
-          console.log('Stretch completed:', request.stretchId);
-          // Future: Track completion statistics
-          sendResponse({ success: true });
-          break;
-
-        case 'testSound':
-          await playSound(request.soundType, request.volume);
-          sendResponse({ success: true });
-          break;
-
-        default:
-          sendResponse({ error: 'Unknown action' });
-      }
-    } catch (error) {
-      console.error('Error handling message:', error);
-      sendResponse({ error: error.message });
+  // Streak logic
+  if (stats.lastCompletionDate === today) {
+    // Already completed today, streak unchanged
+  } else {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    if (stats.lastCompletionDate === yesterday) {
+      stats.currentStreak++;
+    } else if (stats.lastCompletionDate !== today) {
+      stats.currentStreak = 1;
     }
-  })();
+    stats.lastCompletionDate = today;
+  }
 
-  return true; // Keep message channel open for async response
+  // Prune daily counts older than 30 days
+  const cutoff = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+  for (const date of Object.keys(stats.dailyCounts)) {
+    if (date < cutoff) {
+      delete stats.dailyCounts[date];
+    }
+  }
+
+  await chrome.storage.local.set({ stats });
+  return stats;
+}
+
+// Message handler map
+const messageHandlers = {
+  async toggleEnabled(request) {
+    const current = await getSettings();
+    const settings = { ...current, paused: !current.paused };
+    await chrome.storage.sync.set({ settings });
+    if (!settings.paused && settings.enabled) {
+      await startAlarms();
+    } else {
+      await stopAlarms();
+    }
+    return { enabled: settings.enabled && !settings.paused };
+  },
+
+  async updateSettings(request) {
+    await chrome.storage.sync.set({ settings: request.settings });
+    await startAlarms();
+    return { success: true };
+  },
+
+  async getSettings() {
+    return { settings: await getSettings() };
+  },
+
+  async testPostureNotification() {
+    await showPostureReminder(await getSettings());
+    return { success: true };
+  },
+
+  async testStretchNotification() {
+    await showStretchReminder(await getSettings());
+    return { success: true };
+  },
+
+  async testMovementBreak() {
+    await showMovementBreak(await getSettings());
+    return { success: true };
+  },
+
+  async getStretchData(request) {
+    return { stretch: getStretchById(request.stretchId) };
+  },
+
+  async playCompletionSound() {
+    const config = await getSettings();
+    await playSound('posture-chime', config.audio.volume);
+    return { success: true };
+  },
+
+  async stretchCompleted(request) {
+    console.log('Stretch completed:', request.stretchId);
+    await recordCompletion();
+    return { success: true };
+  },
+
+  async testSound(request) {
+    await playSound(request.soundType, request.volume);
+    return { success: true };
+  },
+
+  async getStats() {
+    return { stats: await getStats() };
+  }
+};
+
+// Message dispatcher
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const handler = messageHandlers[request.action];
+  if (!handler) {
+    sendResponse({ error: 'Unknown action' });
+    return false;
+  }
+  handler(request).then(sendResponse).catch(error => {
+    console.error('Error handling message:', error);
+    sendResponse({ error: error.message });
+  });
+  return true;
 });
 
 console.log('Service worker loaded');
