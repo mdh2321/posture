@@ -135,9 +135,8 @@ async function loadStats() {
     const response = await chrome.runtime.sendMessage({ action: 'getStats' });
     if (response && response.stats) {
       const today = new Date().toISOString().split('T')[0];
-      const todayCount = response.stats.dailyCounts[today] || 0;
-      document.getElementById('todayCount').textContent = todayCount;
-      document.getElementById('currentStreak').textContent = `${response.stats.currentStreak} day${response.stats.currentStreak !== 1 ? 's' : ''}`;
+      document.getElementById('todayPosture').textContent = (response.stats.postureChecks && response.stats.postureChecks[today]) || 0;
+      document.getElementById('todayBreaks').textContent = (response.stats.breaksCounts && response.stats.breaksCounts[today]) || 0;
     }
   } catch (error) {
     console.error('Error loading stats:', error);

@@ -254,6 +254,9 @@ async function showPostureReminder(config) {
     console.error('Error creating posture notification:', error);
   }
 
+  // Record the posture check
+  await recordPostureCheck();
+
   // Play audio if enabled
   if (config.audio.enabled) {
     await playSound('posture-chime', config.audio.volume);
@@ -528,39 +531,34 @@ async function playSound(soundType, volume = 0.7) {
 // Stats helpers
 async function getStats() {
   const result = await chrome.storage.local.get('stats');
-  return result.stats || { totalCompleted: 0, dailyCounts: {}, currentStreak: 0, lastCompletionDate: null };
+  return result.stats || { postureChecks: {}, breaksCounts: {} };
+}
+
+async function recordPostureCheck() {
+  const stats = await getStats();
+  const today = new Date().toISOString().split('T')[0];
+  stats.postureChecks[today] = (stats.postureChecks[today] || 0) + 1;
+  pruneOldDates(stats.postureChecks);
+  await chrome.storage.local.set({ stats });
+  return stats;
 }
 
 async function recordCompletion() {
   const stats = await getStats();
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-
-  stats.totalCompleted++;
-  stats.dailyCounts[today] = (stats.dailyCounts[today] || 0) + 1;
-
-  // Streak logic
-  if (stats.lastCompletionDate === today) {
-    // Already completed today, streak unchanged
-  } else {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    if (stats.lastCompletionDate === yesterday) {
-      stats.currentStreak++;
-    } else if (stats.lastCompletionDate !== today) {
-      stats.currentStreak = 1;
-    }
-    stats.lastCompletionDate = today;
-  }
-
-  // Prune daily counts older than 30 days
-  const cutoff = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
-  for (const date of Object.keys(stats.dailyCounts)) {
-    if (date < cutoff) {
-      delete stats.dailyCounts[date];
-    }
-  }
-
+  const today = new Date().toISOString().split('T')[0];
+  stats.breaksCounts[today] = (stats.breaksCounts[today] || 0) + 1;
+  pruneOldDates(stats.breaksCounts);
   await chrome.storage.local.set({ stats });
   return stats;
+}
+
+function pruneOldDates(counts) {
+  const cutoff = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+  for (const date of Object.keys(counts)) {
+    if (date < cutoff) {
+      delete counts[date];
+    }
+  }
 }
 
 // Message handler map
