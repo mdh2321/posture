@@ -531,7 +531,10 @@ async function playSound(soundType, volume = 0.7) {
 // Stats helpers
 async function getStats() {
   const result = await chrome.storage.local.get('stats');
-  return result.stats || { postureChecks: {}, breaksCounts: {} };
+  const stats = result.stats || {};
+  if (!stats.postureChecks) stats.postureChecks = {};
+  if (!stats.breaksCounts) stats.breaksCounts = {};
+  return stats;
 }
 
 async function recordPostureCheck() {
