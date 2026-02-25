@@ -47,9 +47,6 @@ async function loadSettings() {
       document.getElementById('workingHoursRow').style.display = 'none';
     }
 
-    // Update theme button
-    updateThemeButton(settings.theme || 'system');
-
     // Check notification permission
     await checkNotificationPermission();
   } catch (error) {
@@ -108,25 +105,6 @@ document.getElementById('testStretchBtn').addEventListener('click', async () => 
 document.getElementById('settingsLink').addEventListener('click', (e) => {
   e.preventDefault();
   chrome.runtime.openOptionsPage();
-});
-
-// Theme toggle — cycles light → dark → system
-const themeOrder = ['light', 'dark', 'system'];
-const themeIcons = { light: '☀️', dark: '🌙', system: '💻' };
-
-function updateThemeButton(theme) {
-  document.getElementById('themeToggleBtn').textContent = themeIcons[theme] || '💻';
-}
-
-document.getElementById('themeToggleBtn').addEventListener('click', async () => {
-  const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
-  const settings = response.settings;
-  const currentTheme = settings.theme || 'system';
-  const nextIndex = (themeOrder.indexOf(currentTheme) + 1) % themeOrder.length;
-  const nextTheme = themeOrder[nextIndex];
-  settings.theme = nextTheme;
-  await chrome.runtime.sendMessage({ action: 'updateSettings', settings });
-  updateThemeButton(nextTheme);
 });
 
 // Load stats
