@@ -20,7 +20,7 @@ Work top to bottom; tick each box as you go.
 ## Status — still to do (only you can do these)
 - [ ] Pay $5 and register developer account
 - [x] Host the privacy policy at a public URL — done: https://github.com/mdh2321/posture/blob/HEAD/PRIVACY_POLICY.md
-- [ ] Take at least one 1280×800 screenshot
+- [x] Take at least one 1280×800 screenshot — done: five ready in `store-assets/` (real extension rendered in headless Chromium)
 - [ ] Fill the listing + privacy tab and submit
 
 ---
@@ -38,16 +38,15 @@ Work top to bottom; tick each box as you go.
 
 (`HEAD` follows the default branch, so the link stays stable.)
 
-## Step 3 — Take screenshots (1 required, up to 5)
-1. Load the extension: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select `~/Projects/posture/extension`
-   - Or drag `aligned-v1.0.0.zip` onto the page to load this exact build.
-2. macOS only: System Settings → Notifications → Google Chrome → **Allow**, style **Alerts** (so the Done/Snooze buttons show on reminders)
-3. Capture (Cmd+Shift+4) and resize each to **1280×800** on a neutral background:
-   - Popup (switch to sage or amber accent to show off themes)
-   - Options page
-   - A reminder notification
-   - The stretch instruction modal
-   - The welcome page
+## Step 3 — Take screenshots (1 required, up to 5) — DONE
+Five 1280×800 PNGs are ready in `~/Projects/posture/store-assets/`:
+- `popup-dark.png` — popup, dark theme, indigo
+- `popup-amber-light.png` — popup, light theme, amber accent
+- `options-light.png` — settings page, light theme
+- `welcome-dark.png` — welcome/onboarding page, dark theme
+- `stretch-modal-light.png` — guided stretch instructions with timer
+
+They render the real extension UI (loaded unpacked in headless Chromium). Retake any of them manually if you prefer different framing.
 
 ## Step 4 — Upload the package
 1. In the dashboard, click **+ New Item**
