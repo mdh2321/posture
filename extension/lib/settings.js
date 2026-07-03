@@ -10,16 +10,19 @@ const DEFAULT_SETTINGS = {
   },
   audio: {
     enabled: true,
-    volume: 0.7
+    volume: 0.7,
+    sound: 'chime' // 'chime' | 'bell' | 'marimba' | 'woodblock'
   },
   enabled: true, // Extension active/inactive
-  paused: false,  // Temporary pause state (separate from enabled)
+  paused: false, // Temporary pause state (separate from enabled)
+  pausedUntil: null, // Timestamp to auto-resume at, or null for indefinite
   workingHours: {
     enabled: false,
     start: '09:00',
     end: '17:00'
   },
-  theme: 'system'
+  theme: 'system',
+  accent: 'indigo' // 'indigo' | 'green' | 'amber'
 };
 
 // In Chrome extensions, importScripts() makes variables globally available

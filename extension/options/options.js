@@ -1,28 +1,12 @@
-// STRETCHES array is loaded from ../lib/stretches.js via script tag in HTML
+// STRETCHES and DEFAULT_SETTINGS are loaded via script tags in HTML
 
-// Check notification permission and show warning if needed
+// Show warning if notifications are not permitted
 async function checkNotificationPermission() {
   try {
     const permission = await chrome.notifications.getPermissionLevel();
-    const warningElement = document.getElementById('permissionWarning');
-
-    if (permission !== 'granted') {
-      warningElement.style.display = 'block';
-    } else {
-      warningElement.style.display = 'none';
-    }
+    document.getElementById('permissionWarning').hidden = permission === 'granted';
   } catch (error) {
     console.error('Error checking notification permission:', error);
-  }
-}
-
-// Initialize stretch list rendering
-function loadStretches() {
-  // STRETCHES is already available from the script tag
-  if (typeof STRETCHES !== 'undefined' && STRETCHES.length > 0) {
-    renderStretchList();
-  } else {
-    console.error('STRETCHES not loaded');
   }
 }
 
@@ -31,52 +15,57 @@ async function loadSettings() {
   const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
   const settings = response.settings;
 
-  // Theme
   updateThemeSelector(settings.theme || 'system');
+  updateAccentSelector(settings.accent || 'indigo');
 
-  // Interval settings
   document.getElementById('postureInterval').value = settings.intervals.postureCheck;
   document.getElementById('stretchInterval').value = settings.intervals.stretchReminder;
 
-  // Working hours
   document.getElementById('enableWorkingHours').checked = settings.workingHours.enabled;
   document.getElementById('workHoursStart').value = settings.workingHours.start;
   document.getElementById('workHoursEnd').value = settings.workingHours.end;
   toggleWorkingHoursSettings(settings.workingHours.enabled);
 
-  // Audio settings
   document.getElementById('enableAudio').checked = settings.audio.enabled;
   document.getElementById('volume').value = settings.audio.volume * 100;
-  document.getElementById('volumeValue').textContent = `${Math.round(settings.audio.volume * 100)}%`;
+  updateVolumeDisplay();
   toggleAudioSettings(settings.audio.enabled);
+  updateSoundSelector(settings.audio.sound || 'chime');
+}
+
+// Clamp a numeric input to its range, falling back when not a number
+function clampInput(id, min, max, fallback) {
+  const input = document.getElementById(id);
+  const value = parseInt(input.value, 10);
+  const clamped = Number.isFinite(value) ? Math.max(min, Math.min(max, value)) : fallback;
+  input.value = clamped;
+  return clamped;
+}
+
+function showSaveMessage(text, isError = false) {
+  const saveMessage = document.getElementById('saveMessage');
+  saveMessage.textContent = text;
+  saveMessage.classList.toggle('error', isError);
+  saveMessage.hidden = false;
+  clearTimeout(showSaveMessage._timeout);
+  showSaveMessage._timeout = setTimeout(() => {
+    saveMessage.hidden = true;
+  }, 3000);
 }
 
 // Validate settings before saving
 function validateSettings() {
-  const postureInterval = parseInt(document.getElementById('postureInterval').value);
-  const stretchInterval = parseInt(document.getElementById('stretchInterval').value);
-  const volume = parseInt(document.getElementById('volume').value);
+  clampInput('postureInterval', 5, 60, 10);
+  clampInput('stretchInterval', 15, 120, 30);
+  clampInput('volume', 0, 100, 70);
+  updateVolumeDisplay();
+
   const workingHoursEnabled = document.getElementById('enableWorkingHours').checked;
   const start = document.getElementById('workHoursStart').value;
   const end = document.getElementById('workHoursEnd').value;
 
-  // Clamp intervals
-  document.getElementById('postureInterval').value = Math.max(5, Math.min(60, postureInterval || 10));
-  document.getElementById('stretchInterval').value = Math.max(15, Math.min(120, stretchInterval || 30));
-  document.getElementById('volume').value = Math.max(0, Math.min(100, volume || 70));
-  updateVolumeDisplay();
-
-  // Validate working hours
   if (workingHoursEnabled && start >= end) {
-    const saveMessage = document.getElementById('saveMessage');
-    saveMessage.textContent = 'Start time must be before end time';
-    saveMessage.style.color = '#e53935';
-    saveMessage.style.display = 'block';
-    setTimeout(() => {
-      saveMessage.style.color = '';
-      saveMessage.textContent = '\u2713 Settings saved!';
-      saveMessage.style.display = 'none';
-    }, 3000);
+    showSaveMessage('Start time must be before end time', true);
     return false;
   }
 
@@ -87,20 +76,20 @@ function validateSettings() {
 async function saveSettings() {
   if (!validateSettings()) return;
 
-  // Get current settings to preserve enabled and paused states
+  // Preserve enabled/paused states, which are managed from the popup
   const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
   const currentSettings = response.settings;
 
   const settings = {
     intervals: {
-      postureCheck: parseInt(document.getElementById('postureInterval').value),
-      stretchReminder: parseInt(document.getElementById('stretchInterval').value)
+      postureCheck: parseInt(document.getElementById('postureInterval').value, 10),
+      stretchReminder: parseInt(document.getElementById('stretchInterval').value, 10)
     },
     audio: {
       enabled: document.getElementById('enableAudio').checked,
-      volume: parseInt(document.getElementById('volume').value) / 100
+      volume: parseInt(document.getElementById('volume').value, 10) / 100,
+      sound: getSelectedSound()
     },
-    // Preserve enabled and paused states from current settings
     enabled: currentSettings ? currentSettings.enabled : true,
     paused: currentSettings ? currentSettings.paused : false,
     workingHours: {
@@ -108,20 +97,12 @@ async function saveSettings() {
       start: document.getElementById('workHoursStart').value,
       end: document.getElementById('workHoursEnd').value
     },
-    theme: getSelectedTheme()
+    theme: getSelectedTheme(),
+    accent: getSelectedAccent()
   };
 
-  await chrome.runtime.sendMessage({
-    action: 'updateSettings',
-    settings: settings
-  });
-
-  // Show save confirmation
-  const saveMessage = document.getElementById('saveMessage');
-  saveMessage.style.display = 'block';
-  setTimeout(() => {
-    saveMessage.style.display = 'none';
-  }, 3000);
+  await chrome.runtime.sendMessage({ action: 'updateSettings', settings });
+  showSaveMessage('✓ Settings saved');
 }
 
 // Reset to default settings
@@ -135,46 +116,30 @@ async function resetSettings() {
     settings: { ...DEFAULT_SETTINGS }
   });
 
-  // Reload settings display
   loadSettings();
-
-  // Show confirmation
-  const saveMessage = document.getElementById('saveMessage');
-  saveMessage.textContent = '✓ Reset to defaults!';
-  saveMessage.style.display = 'block';
-  setTimeout(() => {
-    saveMessage.textContent = '✓ Settings saved!';
-    saveMessage.style.display = 'none';
-  }, 3000);
+  showSaveMessage('✓ Reset to defaults');
 }
 
-// Toggle working hours settings visibility
 function toggleWorkingHoursSettings(enabled) {
-  const settingsDiv = document.getElementById('workingHoursSettings');
-  settingsDiv.style.display = enabled ? 'block' : 'none';
+  document.getElementById('workingHoursSettings').hidden = !enabled;
   document.getElementById('enableWorkingHours').setAttribute('aria-expanded', String(enabled));
 }
 
-// Toggle audio settings visibility
 function toggleAudioSettings(enabled) {
-  const settingsDiv = document.getElementById('audioSettings');
-  settingsDiv.style.display = enabled ? 'block' : 'none';
+  document.getElementById('audioSettings').hidden = !enabled;
   document.getElementById('enableAudio').setAttribute('aria-expanded', String(enabled));
 }
 
-// Update volume display
 function updateVolumeDisplay() {
-  const volumeSlider = document.getElementById('volume');
-  const volumeValue = document.getElementById('volumeValue');
-  volumeValue.textContent = `${volumeSlider.value}%`;
+  document.getElementById('volumeValue').textContent = `${document.getElementById('volume').value}%`;
 }
 
 // Render stretch library
 function renderStretchList() {
   const container = document.getElementById('stretchList');
 
-  if (!STRETCHES || STRETCHES.length === 0) {
-    container.innerHTML = '<p class="help-text">Loading stretches...</p>';
+  if (typeof STRETCHES === 'undefined' || STRETCHES.length === 0) {
+    container.innerHTML = '<p class="help-text">No stretches available.</p>';
     return;
   }
 
@@ -184,21 +149,12 @@ function renderStretchList() {
     const item = document.createElement('div');
     item.className = 'stretch-item';
 
-    const categoryIcons = {
-      'neck': '🦒',
-      'shoulder': '💪',
-      'neck-shoulder': '🤸',
-      'chest': '🫁',
-      'back': '🧘',
-      'wrist': '🖐️'
-    };
-
     item.innerHTML = `
-      <h3>${categoryIcons[stretch.category] || '✨'} ${stretch.name}</h3>
+      <h3>${stretch.name}</h3>
       <div class="stretch-meta">
-        <span>⏱️ ${stretch.duration}s</span>
-        <span>📊 ${stretch.difficulty}</span>
-        <span>🏷️ ${stretch.category}</span>
+        <span>${stretch.duration}s</span>
+        <span>${stretch.difficulty}</span>
+        <span>${stretch.category}</span>
       </div>
       <p class="stretch-description">${stretch.description}</p>
       <p class="stretch-benefits"><strong>Benefits:</strong> ${stretch.benefits}</p>
@@ -208,28 +164,22 @@ function renderStretchList() {
   });
 }
 
-// Test sound buttons
-async function testSound(soundType) {
-  const volume = parseInt(document.getElementById('volume').value) / 100;
-  await chrome.runtime.sendMessage({
-    action: 'testSound',
-    soundType: soundType,
-    volume: volume
+// Sound helpers
+function getSelectedSound() {
+  const active = document.querySelector('.sound-option.active');
+  return active ? active.dataset.sound : 'chime';
+}
+
+function updateSoundSelector(sound) {
+  document.querySelectorAll('.sound-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.sound === sound);
   });
 }
 
-// Event listeners
-document.getElementById('saveBtn').addEventListener('click', saveSettings);
-document.getElementById('resetBtn').addEventListener('click', resetSettings);
-document.getElementById('enableWorkingHours').addEventListener('change', (e) => {
-  toggleWorkingHoursSettings(e.target.checked);
-});
-document.getElementById('enableAudio').addEventListener('change', (e) => {
-  toggleAudioSettings(e.target.checked);
-});
-document.getElementById('volume').addEventListener('input', updateVolumeDisplay);
-document.getElementById('testPostureSound').addEventListener('click', () => testSound('posture-chime'));
-document.getElementById('testStretchSound').addEventListener('click', () => testSound('stretch-bell'));
+async function previewSound(style) {
+  const volume = parseInt(document.getElementById('volume').value, 10) / 100;
+  await chrome.runtime.sendMessage({ action: 'testSound', style, variant: 'posture', volume });
+}
 
 // Theme helpers
 function getSelectedTheme() {
@@ -243,14 +193,73 @@ function updateThemeSelector(theme) {
   });
 }
 
-// Theme selector event listeners
+// Apply a theme immediately so the choice can be previewed before saving
+function previewTheme(theme) {
+  const dark = theme === 'dark' ||
+    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+}
+
+// Accent helpers
+function getSelectedAccent() {
+  const active = document.querySelector('.accent-option.active');
+  return active ? active.dataset.accent : 'indigo';
+}
+
+function updateAccentSelector(accent) {
+  document.querySelectorAll('.accent-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.accent === accent);
+  });
+}
+
+// Apply an accent immediately so the choice can be previewed before saving
+function previewAccent(accent) {
+  const html = document.documentElement;
+  html.classList.remove('accent-green', 'accent-amber');
+  if (accent === 'green' || accent === 'amber') {
+    html.classList.add(`accent-${accent}`);
+  }
+}
+
+// Event listeners
+document.getElementById('saveBtn').addEventListener('click', saveSettings);
+document.getElementById('resetBtn').addEventListener('click', resetSettings);
+document.getElementById('enableWorkingHours').addEventListener('change', (e) => {
+  toggleWorkingHoursSettings(e.target.checked);
+});
+document.getElementById('enableAudio').addEventListener('change', (e) => {
+  toggleAudioSettings(e.target.checked);
+});
+document.getElementById('volume').addEventListener('input', updateVolumeDisplay);
+document.getElementById('volume').addEventListener('change', () => previewSound(getSelectedSound()));
+document.querySelectorAll('.sound-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    updateSoundSelector(btn.dataset.sound);
+    previewSound(btn.dataset.sound);
+  });
+});
+document.getElementById('testPostureBtn').addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'testPostureNotification' });
+});
+document.getElementById('testBreakBtn').addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'testMovementBreak' });
+});
+
 document.querySelectorAll('.theme-option').forEach(btn => {
   btn.addEventListener('click', () => {
     updateThemeSelector(btn.dataset.theme);
+    previewTheme(btn.dataset.theme);
+  });
+});
+
+document.querySelectorAll('.accent-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    updateAccentSelector(btn.dataset.accent);
+    previewAccent(btn.dataset.accent);
   });
 });
 
 // Initialize
 loadSettings();
-loadStretches();
+renderStretchList();
 checkNotificationPermission();

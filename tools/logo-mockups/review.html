@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aligned — Logo & Accent Review</title>
+<style>
+  :root {
+    --indigo: #667eea; --indigo-grad: linear-gradient(135deg,#667eea,#764ba2);
+    --green:  #2f9e6b; --green-grad:  linear-gradient(135deg,#34b37a,#1f8a5c);
+    --amber:  #d97f2c; --amber-grad:  linear-gradient(135deg,#f0a23f,#d2691e);
+    --green-dk: #34d399; --green-dk-grad: linear-gradient(135deg,#34d399,#059669);
+    --amber-dk: #f59e0b; --amber-dk-grad: linear-gradient(135deg,#fbbf24,#ea580c);
+    --indigo-dk: #818cf8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #f0f0f3; color: #1a1a22;
+  }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .sub { color: #6b7280; margin: 0 0 36px; font-size: 14px; }
+  h2 { font-size: 16px; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #ddd; }
+
+  /* --- Logos --- */
+  .logo-grid { display: flex; gap: 24px; flex-wrap: wrap; }
+  .logo-card {
+    background: #fff; border: 1px solid #e2e2e8; border-radius: 14px;
+    padding: 20px 24px; flex: 1; min-width: 280px;
+  }
+  .logo-card h3 { margin: 0 0 4px; font-size: 15px; }
+  .logo-card .desc { color: #6b7280; font-size: 12.5px; margin: 0 0 18px; min-height: 32px; }
+  .sizes { display: flex; align-items: flex-end; gap: 20px; }
+  .sizes figure { margin: 0; text-align: center; }
+  .sizes img { display: block; image-rendering: -webkit-optimize-contrast; }
+  .sizes figcaption { font-size: 11px; color: #9095a0; margin-top: 6px; }
+  .bg-strip { display: flex; gap: 0; margin-top: 18px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e2e8; }
+  .bg-strip > div { flex: 1; padding: 14px; display: flex; gap: 14px; align-items: center; justify-content: center; }
+  .bg-light { background: #f5f5f5; }
+  .bg-dark  { background: #16161c; }
+  .pick {
+    display: inline-block; margin-top: 16px; font-size: 12px; font-weight: 600;
+    color: #2f9e6b; background: #eafaf1; border: 1px solid #b7e6cd;
+    padding: 3px 10px; border-radius: 999px;
+  }
+
+  /* --- Accent mock popups --- */
+  .accent-row { display: flex; gap: 24px; flex-wrap: wrap; }
+  .pop {
+    width: 300px; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--brd); box-shadow: 0 6px 20px rgba(0,0,0,.08);
+    font-size: 13px;
+  }
+  .pop.light { --bg:#f5f5f5; --card:#fff; --fg:#333; --muted:#888; --brd:#e0e0e0; --elev:#f0f0f0; }
+  .pop.dark  { --bg:#0f0f14; --card:#1a1a22; --fg:#e5e5e5; --muted:#6b7280; --brd:#2a2a35; --elev:#222230; }
+  .pop { background: var(--card); color: var(--fg); }
+  .pop-head { display: flex; align-items: center; justify-content: space-between; padding: 16px; }
+  .pop-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; }
+  .pop-brand img { width: 22px; height: 22px; border-radius: 5px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 999px; background: var(--elev); color: var(--accent);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .pause-btn {
+    margin: 0 16px; width: calc(100% - 32px); padding: 11px; border: none; border-radius: 10px;
+    color: #fff; font-weight: 600; font-size: 13px; cursor: default; background: var(--grad);
+  }
+  .stats { display: flex; gap: 10px; padding: 16px; }
+  .tile { flex: 1; background: var(--elev); border-radius: 10px; padding: 12px; text-align: center; }
+  .tile .v { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .tile .l { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .sched { padding: 4px 16px 16px; }
+  .sched .row { display: flex; justify-content: space-between; padding: 7px 0; border-top: 1px solid var(--brd); }
+  .sched .row span:last-child { color: var(--accent); font-weight: 600; }
+  .acc-label { font-weight: 600; font-size: 13px; margin: 0 0 10px; }
+</style>
+</head>
+<body>
+  <h1>Aligned — Logo &amp; Accent Review</h1>
+  <p class="sub">Mockups for store launch. Pick one logo direction and confirm the accent set. Nothing here is shipped yet.</p>
+
+  <h2>Logo directions</h2>
+  <div class="logo-grid">
+    <div class="logo-card">
+      <h3>A — Standing figure</h3>
+      <p class="desc">Head, shoulders &amp; upright spine on a baseline. Reads instantly as "sitting tall."</p>
+      <div class="sizes">
+        <figure><img src="a_figure_128.png" width="96" height="96"><figcaption>128</figcaption></figure>
+        <figure><img src="a_figure_48.png" width="48" height="48"><figcaption>48</figcaption></figure>
+        <figure><img src="a_figure_32.png" width="32" height="32"><figcaption>32</figcaption></figure>
+        <figure><img src="a_figure_16.png" width="16" height="16"><figcaption>16</figcaption></figure>
+      </div>
+      <div class="bg-strip">
+        <div class="bg-light"><img src="a_figure_32.png" width="32"><img src="a_figure_16.png" width="16"></div>
+        <div class="bg-dark"><img src="a_figure_32.png" width="32"><img src="a_figure_16.png" width="16"></div>
+      </div>
+      <span class="pick">Recommended</span>
+    </div>
+
+    <div class="logo-card">
+      <h3>B — Alignment marks</h3>
+      <p class="desc">Centered bars snapping to a guide line. Abstract; ties to the name but reads like a sliders icon when small.</p>
+      <div class="sizes">
+        <figure><img src="b_alignment_128.png" width="96" height="96"><figcaption>128</figcaption></figure>
+        <figure><img src="b_alignment_48.png" width="48" height="48"><figcaption>48</figcaption></figure>
+        <figure><img src="b_alignment_32.png" width="32" height="32"><figcaption>32</figcaption></figure>
+        <figure><img src="b_alignment_16.png" width="16" height="16"><figcaption>16</figcaption></figure>
+      </div>
+      <div class="bg-strip">
+        <div class="bg-light"><img src="b_alignment_32.png" width="32"><img src="b_alignment_16.png" width="16"></div>
+        <div class="bg-dark"><img src="b_alignment_32.png" width="32"><img src="b_alignment_16.png" width="16"></div>
+      </div>
+    </div>
+
+    <div class="logo-card">
+      <h3>C — Spine</h3>
+      <p class="desc">Head dot atop stacked vertebrae. Nice concept; slightly ambiguous at tray size.</p>
+      <div class="sizes">
+        <figure><img src="c_spine_128.png" width="96" height="96"><figcaption>128</figcaption></figure>
+        <figure><img src="c_spine_48.png" width="48" height="48"><figcaption>48</figcaption></figure>
+        <figure><img src="c_spine_32.png" width="32" height="32"><figcaption>32</figcaption></figure>
+        <figure><img src="c_spine_16.png" width="16" height="16"><figcaption>16</figcaption></figure>
+      </div>
+      <div class="bg-strip">
+        <div class="bg-light"><img src="c_spine_32.png" width="32"><img src="c_spine_16.png" width="16"></div>
+        <div class="bg-dark"><img src="c_spine_32.png" width="32"><img src="c_spine_16.png" width="16"></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Accent colours — on the real popup UI (light + dark)</h2>
+  <div id="accents"></div>
+
+<script>
+  const ACCENTS = [
+    { name: 'Indigo (default)', light: { accent:'#667eea', grad:'var(--indigo-grad)' }, dark: { accent:'#818cf8', grad:'var(--indigo-grad)' } },
+    { name: 'Sage green',       light: { accent:'#2f9e6b', grad:'var(--green-grad)' },  dark: { accent:'#34d399', grad:'var(--green-dk-grad)' } },
+    { name: 'Amber',            light: { accent:'#d97f2c', grad:'var(--amber-grad)' },  dark: { accent:'#f59e0b', grad:'var(--amber-dk-grad)' } },
+  ];
+
+  function popup(mode, a) {
+    return `
+      <div class="pop ${mode}" style="--accent:${a.accent};--grad:${a.grad}">
+        <div class="pop-head">
+          <div class="pop-brand"><img src="a_figure_48.png">Aligned</div>
+          <span class="pill"><span class="dot"></span>Active</span>
+        </div>
+        <button class="pause-btn">Pause reminders</button>
+        <div class="stats">
+          <div class="tile"><div class="v">7</div><div class="l">Posture checks today</div></div>
+          <div class="tile"><div class="v">3</div><div class="l">Breaks taken today</div></div>
+        </div>
+        <div class="sched">
+          <div class="row"><span>Posture check</span><span>every 10 min</span></div>
+          <div class="row"><span>Movement break</span><span>every 30 min</span></div>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('accents').innerHTML = ACCENTS.map(a => `
+    <div style="margin-bottom:28px">
+      <p class="acc-label">${a.name}</p>
+      <div class="accent-row">
+        ${popup('light', a.light)}
+        ${popup('dark', a.dark)}
+      </div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

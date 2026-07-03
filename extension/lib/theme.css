@@ -84,3 +84,35 @@
   --timer-bg: #1a1a2e;
   --stretch-border-color: #818cf8;
 }
+
+/* --- Accent themes ---
+   Orthogonal to light/dark: an accent class on <html> overrides only the
+   primary/accent variables. Indigo is the default (no class). Light variants
+   use :root.accent-x (beats :root); dark variants use :root.dark.accent-x
+   (beats :root.dark). */
+
+:root.accent-green {
+  --primary: #2f9e6b;
+  --primary-hover: #27855a;
+  --primary-gradient: linear-gradient(135deg, #34b37a 0%, #1f8a5c 100%);
+  --stretch-border-color: #2f9e6b;
+}
+:root.dark.accent-green {
+  --primary: #34d399;
+  --primary-hover: #10b981;
+  --primary-gradient: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  --stretch-border-color: #34d399;
+}
+
+:root.accent-amber {
+  --primary: #d97f2c;
+  --primary-hover: #bf6c1f;
+  --primary-gradient: linear-gradient(135deg, #f0a23f 0%, #d2691e 100%);
+  --stretch-border-color: #d97f2c;
+}
+:root.dark.accent-amber {
+  --primary: #f59e0b;
+  --primary-hover: #d97706;
+  --primary-gradient: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
+  --stretch-border-color: #f59e0b;
+}

@@ -1,0 +1,157 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: 15px;
+  color: var(--fg);
+  background: var(--bg);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 56px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+}
+
+.hero-icon {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 16px;
+}
+
+.hero h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.tagline {
+  font-size: 16px;
+  color: var(--fg-hint);
+}
+
+/* Features */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.feature-card h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.feature-card p {
+  font-size: 13px;
+  color: var(--fg-hint);
+}
+
+/* Setup */
+.setup {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.setup h2 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.setup > p {
+  color: var(--fg-secondary);
+  margin-bottom: 12px;
+}
+
+.setup ol {
+  padding-left: 22px;
+  margin-bottom: 20px;
+  color: var(--fg-secondary);
+}
+
+.setup li {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-secondary {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-fg);
+}
+
+.btn-secondary:hover {
+  background: var(--btn-secondary-hover);
+}
+
+.test-sent {
+  margin-top: 14px;
+  color: var(--success);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.test-sent[hidden] {
+  display: none;
+}
+
+/* Footer */
+footer p {
+  text-align: center;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

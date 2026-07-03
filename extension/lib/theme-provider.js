@@ -13,16 +13,26 @@
     }
   }
 
-  // Load theme from storage and apply
+  function applyAccent(accent) {
+    const html = document.documentElement;
+    html.classList.remove('accent-green', 'accent-amber');
+    if (accent === 'green' || accent === 'amber') {
+      html.classList.add(`accent-${accent}`);
+    }
+  }
+
+  // Load theme + accent from storage and apply
   chrome.storage.sync.get('settings', (result) => {
-    const theme = (result.settings && result.settings.theme) || 'system';
-    applyTheme(theme);
+    const settings = result.settings || {};
+    applyTheme(settings.theme || 'system');
+    applyAccent(settings.accent || 'indigo');
   });
 
   // Listen for storage changes
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'sync' && changes.settings && changes.settings.newValue) {
       applyTheme(changes.settings.newValue.theme || 'system');
+      applyAccent(changes.settings.newValue.accent || 'indigo');
     }
   });
 

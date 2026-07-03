@@ -1,14 +1,13 @@
-// Check notification permission and show warning if needed
+// Local-time date key (YYYY-MM-DD), matching the service worker's stats keys
+function localDateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// Show warning if notifications are not permitted
 async function checkNotificationPermission() {
   try {
     const permission = await chrome.notifications.getPermissionLevel();
-    const warningElement = document.getElementById('permissionWarning');
-
-    if (permission !== 'granted') {
-      warningElement.style.display = 'block';
-    } else {
-      warningElement.style.display = 'none';
-    }
+    document.getElementById('permissionWarning').hidden = permission === 'granted';
   } catch (error) {
     console.error('Error checking notification permission:', error);
   }
@@ -17,110 +16,122 @@ async function checkNotificationPermission() {
 // Load current settings and update UI
 async function loadSettings() {
   try {
-    console.log('Requesting settings from background...');
     const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
-    console.log('Response received:', response);
-
     if (!response || !response.settings) {
-      console.error('Failed to load settings from background', response);
-      // Try to show default state at least
       updateStatus(true);
       return;
     }
     const settings = response.settings;
-    console.log('Settings loaded:', settings);
 
-    // Update status indicator (effective enabled state = enabled && !paused)
-    const effectiveEnabled = settings.enabled && !settings.paused;
-    updateStatus(effectiveEnabled);
+    updateStatus(settings.enabled && !settings.paused, settings.pausedUntil);
 
-    // Update interval displays
-    document.getElementById('postureInterval').textContent = `Every ${settings.intervals.postureCheck} min`;
-    document.getElementById('stretchInterval').textContent = `Every ${settings.intervals.stretchReminder} min`;
+    document.getElementById('postureInterval').textContent = `every ${settings.intervals.postureCheck} min`;
+    document.getElementById('stretchInterval').textContent = `every ${settings.intervals.stretchReminder} min`;
 
-    // Update working hours display
+    const workingHoursRow = document.getElementById('workingHoursRow');
     if (settings.workingHours.enabled) {
-      document.getElementById('workingHoursRow').style.display = 'flex';
+      workingHoursRow.hidden = false;
       document.getElementById('workingHours').textContent =
-        `${settings.workingHours.start} - ${settings.workingHours.end}`;
+        `${settings.workingHours.start} – ${settings.workingHours.end}`;
     } else {
-      document.getElementById('workingHoursRow').style.display = 'none';
+      workingHoursRow.hidden = true;
     }
-
-    // Check notification permission
-    await checkNotificationPermission();
   } catch (error) {
     console.error('Error loading settings:', error);
-    // Show default state
     updateStatus(true);
   }
 }
 
-// Update status indicator
-function updateStatus(enabled) {
-  const statusDot = document.getElementById('statusDot');
+function formatResumeTime(pausedUntil) {
+  const resume = new Date(pausedUntil);
+  const now = new Date();
+  const time = resume.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  if (resume.getDate() !== now.getDate()) {
+    return `Resumes tomorrow at ${time}`;
+  }
+  return `Resumes at ${time}`;
+}
+
+function updateStatus(enabled, pausedUntil = null) {
+  const statusPill = document.getElementById('statusPill');
   const statusText = document.getElementById('statusText');
   const toggleBtn = document.getElementById('toggleBtn');
+  const resumeInfo = document.getElementById('resumeInfo');
+
+  statusPill.classList.toggle('active', enabled);
+  statusText.textContent = enabled ? 'Active' : 'Paused';
+  toggleBtn.textContent = enabled ? 'Pause reminders' : 'Resume reminders';
+  toggleBtn.classList.toggle('paused', !enabled);
+
+  if (!enabled && pausedUntil) {
+    resumeInfo.textContent = formatResumeTime(pausedUntil);
+    resumeInfo.hidden = false;
+  } else {
+    resumeInfo.hidden = true;
+  }
 
   if (enabled) {
-    statusDot.classList.add('enabled');
-    statusDot.classList.remove('disabled');
-    statusText.textContent = 'Active';
-    toggleBtn.textContent = 'Pause Reminders';
-    toggleBtn.classList.remove('paused');
-  } else {
-    statusDot.classList.remove('enabled');
-    statusDot.classList.add('disabled');
-    statusText.textContent = 'Paused';
-    toggleBtn.textContent = 'Resume Reminders';
-    toggleBtn.classList.add('paused');
+    hidePauseOptions();
   }
 }
 
-// Toggle enabled/disabled
+function hidePauseOptions() {
+  document.getElementById('pauseOptions').hidden = true;
+}
+
+async function pauseFor(choice) {
+  let until = null;
+  if (choice === 'tomorrow') {
+    // Next local midnight
+    const t = new Date();
+    t.setHours(24, 0, 0, 0);
+    until = t.getTime();
+  } else if (choice !== 'forever') {
+    until = Date.now() + parseInt(choice, 10) * 60000;
+  }
+
+  const response = await chrome.runtime.sendMessage({ action: 'pause', until });
+  if (response && response.paused) {
+    hidePauseOptions();
+    updateStatus(false, response.pausedUntil);
+  }
+}
+
 document.getElementById('toggleBtn').addEventListener('click', async () => {
-  const response = await chrome.runtime.sendMessage({ action: 'toggleEnabled' });
-  if (response && response.enabled !== undefined) {
-    updateStatus(response.enabled);
+  const toggleBtn = document.getElementById('toggleBtn');
+  if (toggleBtn.classList.contains('paused')) {
+    const response = await chrome.runtime.sendMessage({ action: 'resume' });
+    if (response && response.paused === false) {
+      updateStatus(true);
+    }
   } else {
-    console.error('Failed to toggle enabled state');
+    const pauseOptions = document.getElementById('pauseOptions');
+    pauseOptions.hidden = !pauseOptions.hidden;
   }
 });
 
-// Test posture notification
-document.getElementById('testPostureBtn').addEventListener('click', async () => {
-  console.log('Test posture button clicked');
-  const response = await chrome.runtime.sendMessage({ action: 'testPostureNotification' });
-  console.log('Test posture response:', response);
+document.querySelectorAll('.pause-option').forEach(btn => {
+  btn.addEventListener('click', () => pauseFor(btn.dataset.minutes));
 });
 
-// Test movement break (alternates between tip and stretch)
-document.getElementById('testStretchBtn').addEventListener('click', async () => {
-  console.log('Test movement break button clicked');
-  const response = await chrome.runtime.sendMessage({ action: 'testMovementBreak' });
-  console.log('Test movement break response:', response);
-});
-
-// Open settings page
 document.getElementById('settingsLink').addEventListener('click', (e) => {
   e.preventDefault();
   chrome.runtime.openOptionsPage();
 });
 
-// Load stats
 async function loadStats() {
   try {
     const response = await chrome.runtime.sendMessage({ action: 'getStats' });
     if (response && response.stats) {
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('todayPosture').textContent = (response.stats.postureChecks && response.stats.postureChecks[today]) || 0;
-      document.getElementById('todayBreaks').textContent = (response.stats.breaksCounts && response.stats.breaksCounts[today]) || 0;
+      const today = localDateKey();
+      document.getElementById('todayPosture').textContent = response.stats.postureChecks[today] || 0;
+      document.getElementById('todayBreaks').textContent = response.stats.breaksCounts[today] || 0;
     }
   } catch (error) {
     console.error('Error loading stats:', error);
   }
 }
 
-// Load settings and stats on popup open
 loadSettings();
 loadStats();
+checkNotificationPermission();

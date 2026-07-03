@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Aligned</title>
+  <link rel="stylesheet" href="../lib/theme.css">
+  <link rel="stylesheet" href="welcome.css">
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <img src="../assets/icons/icon128.png" alt="" class="hero-icon">
+      <h1>Welcome to Aligned</h1>
+      <p class="tagline">Gentle posture reminders and movement breaks, right in your browser.</p>
+    </header>
+
+    <section class="features">
+      <div class="feature-card">
+        <h2>Posture nudges</h2>
+        <p>A quiet reminder every 10 minutes to sit up straight. Adjust the rhythm any time in settings.</p>
+      </div>
+      <div class="feature-card">
+        <h2>Movement breaks</h2>
+        <p>Every 30 minutes, a quick movement tip or a guided stretch — snooze it if you're mid-flow.</p>
+      </div>
+      <div class="feature-card">
+        <h2>Guided stretches</h2>
+        <p>Ten desk-friendly stretches for neck, shoulders, back, and wrists, with step-by-step instructions and a timer.</p>
+      </div>
+    </section>
+
+    <section class="setup">
+      <h2>One quick check</h2>
+      <p>Aligned works through notifications, so make sure Chrome is allowed to show them:</p>
+      <ol>
+        <li>Click the button below to send yourself a test reminder.</li>
+        <li>If nothing appears: <strong>macOS</strong> — open System Settings → Notifications → Google Chrome, allow notifications, and choose the <strong>Alerts</strong> style so action buttons show. <strong>Windows</strong> — check Settings → System → Notifications, and that Focus Assist isn't blocking Chrome.</li>
+      </ol>
+      <div class="actions">
+        <button id="testBtn" class="btn btn-primary">Send a test reminder</button>
+        <button id="settingsBtn" class="btn btn-secondary">Open settings</button>
+      </div>
+      <p id="testSent" class="test-sent" role="status" hidden>Test reminder sent — did you see it?</p>
+    </section>
+
+    <footer>
+      <p>Reminders are already running. Pause them any time from the toolbar icon. No account, no tracking — everything stays in your browser.</p>
+    </footer>
+  </div>
+
+  <script src="../lib/theme-provider.js"></script>
+  <script src="welcome.js"></script>
+</body>
+</html>

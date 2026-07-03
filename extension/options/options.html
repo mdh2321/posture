@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Posture Check - Settings</title>
+  <title>Aligned — Settings</title>
   <link rel="stylesheet" href="../lib/theme.css">
   <link rel="stylesheet" href="options.css">
 </head>
@@ -11,9 +11,9 @@
   <div class="container">
     <header>
       <div class="header-content">
-        <img src="../assets/icons/icon48.png" alt="Posture Check" class="header-icon">
+        <img src="../assets/icons/icon48.png" alt="" class="header-icon">
         <div class="header-text">
-          <h1>Posture Check</h1>
+          <h1>Aligned</h1>
           <p class="subtitle">Settings</p>
         </div>
       </div>
@@ -21,14 +21,14 @@
 
     <div class="content">
       <!-- Notification Permission Warning -->
-      <div id="permissionWarning" class="permission-warning" role="alert" style="display: none;">
-        <strong>⚠️ Notifications Disabled</strong>
-        <p>This extension requires notification permissions to show reminders. Please enable notifications in your browser settings.</p>
+      <div id="permissionWarning" class="permission-warning" role="alert" hidden>
+        <strong>Notifications disabled</strong>
+        <p>This extension needs notification permission to show reminders. Enable notifications for Chrome in your system settings.</p>
       </div>
 
       <!-- Appearance -->
       <section class="section">
-        <h2>🎨 Appearance</h2>
+        <h2>Appearance</h2>
 
         <div class="setting-group">
           <label>Theme</label>
@@ -37,53 +37,75 @@
             <button type="button" class="theme-option" data-theme="dark">Dark</button>
             <button type="button" class="theme-option active" data-theme="system">System</button>
           </div>
-          <p class="help-text">Choose your preferred color scheme</p>
+        </div>
+
+        <div class="setting-group">
+          <label>Accent</label>
+          <div class="accent-selector">
+            <button type="button" class="accent-option active" data-accent="indigo">
+              <span class="accent-dot" style="background:#667eea"></span>Indigo
+            </button>
+            <button type="button" class="accent-option" data-accent="green">
+              <span class="accent-dot" style="background:#2f9e6b"></span>Sage
+            </button>
+            <button type="button" class="accent-option" data-accent="amber">
+              <span class="accent-dot" style="background:#d97f2c"></span>Amber
+            </button>
+          </div>
         </div>
       </section>
 
       <!-- Reminder Intervals -->
       <section class="section">
-        <h2>⏰ Reminder Intervals</h2>
+        <h2>Reminders</h2>
 
         <div class="setting-group">
-          <label for="postureInterval">Posture Check Reminder</label>
+          <label for="postureInterval">Posture check</label>
           <div class="input-group">
             <input type="number" id="postureInterval" min="5" max="60" step="5" value="10">
             <span class="unit">minutes</span>
           </div>
-          <p class="help-text">How often to remind you to check your posture</p>
+          <p class="help-text">How often to remind you to check your posture (5–60 min)</p>
         </div>
 
         <div class="setting-group">
-          <label for="stretchInterval">Movement Break Reminder</label>
+          <label for="stretchInterval">Movement break</label>
           <div class="input-group">
             <input type="number" id="stretchInterval" min="15" max="120" step="5" value="30">
             <span class="unit">minutes</span>
           </div>
-          <p class="help-text">How often to remind you to take a movement break</p>
+          <p class="help-text">How often to suggest a movement break or stretch (15–120 min)</p>
+        </div>
+
+        <div class="setting-group">
+          <label>Preview</label>
+          <div class="button-row">
+            <button id="testPostureBtn" class="btn btn-small btn-secondary">Posture reminder</button>
+            <button id="testBreakBtn" class="btn btn-small btn-secondary">Movement break</button>
+          </div>
+          <p class="help-text">Send yourself a sample notification</p>
         </div>
       </section>
 
       <!-- Working Hours -->
       <section class="section">
-        <h2>🕒 Working Hours</h2>
+        <h2>Working hours</h2>
 
         <div class="setting-group">
           <label class="checkbox-label">
             <input type="checkbox" id="enableWorkingHours" aria-expanded="false" aria-controls="workingHoursSettings">
-            <span>Enable working hours schedule</span>
+            <span>Only remind me during working hours</span>
           </label>
-          <p class="help-text">Only show reminders during specific hours</p>
         </div>
 
-        <div id="workingHoursSettings" class="sub-settings" style="display: none;">
+        <div id="workingHoursSettings" class="sub-settings" hidden>
           <div class="setting-group">
-            <label for="workHoursStart">Start Time</label>
+            <label for="workHoursStart">Start time</label>
             <input type="time" id="workHoursStart" value="09:00">
           </div>
 
           <div class="setting-group">
-            <label for="workHoursEnd">End Time</label>
+            <label for="workHoursEnd">End time</label>
             <input type="time" id="workHoursEnd" value="17:00">
           </div>
         </div>
@@ -91,17 +113,27 @@
 
       <!-- Audio Settings -->
       <section class="section">
-        <h2>🔔 Audio Notifications</h2>
+        <h2>Sound</h2>
 
         <div class="setting-group">
           <label class="checkbox-label">
             <input type="checkbox" id="enableAudio" checked aria-expanded="true" aria-controls="audioSettings">
-            <span>Enable notification sounds</span>
+            <span>Play a gentle chime with each reminder</span>
           </label>
-          <p class="help-text">Play a gentle chime with each reminder</p>
         </div>
 
         <div id="audioSettings" class="sub-settings">
+          <div class="setting-group">
+            <label>Sound style</label>
+            <div class="sound-selector">
+              <button type="button" class="sound-option active" data-sound="chime">Chime</button>
+              <button type="button" class="sound-option" data-sound="bell">Bell</button>
+              <button type="button" class="sound-option" data-sound="marimba">Marimba</button>
+              <button type="button" class="sound-option" data-sound="woodblock">Wood block</button>
+            </div>
+            <p class="help-text">Click a style to hear it</p>
+          </div>
+
           <div class="setting-group">
             <label for="volume">Volume</label>
             <div class="slider-container">
@@ -109,22 +141,13 @@
               <span id="volumeValue" class="value-display">70%</span>
             </div>
           </div>
-
-          <div class="setting-group">
-            <label>Test Notification Sounds</label>
-            <div class="sound-test-buttons">
-              <button id="testPostureSound" class="btn btn-small btn-secondary">▶️ Posture Chime</button>
-              <button id="testStretchSound" class="btn btn-small btn-secondary">▶️ Stretch Bell</button>
-            </div>
-            <p class="help-text">Preview how notification sounds will sound</p>
-          </div>
         </div>
       </section>
 
       <!-- Stretch Library -->
       <section class="section">
-        <h2>🧘 Stretch Library</h2>
-        <p class="help-text" style="margin-bottom: 15px;">Browse available stretches and exercises</p>
+        <h2>Stretch library</h2>
+        <p class="help-text section-intro">The stretches suggested during movement breaks</p>
 
         <div id="stretchList" class="stretch-list">
           <!-- Stretches will be dynamically loaded here -->
@@ -133,36 +156,36 @@
 
       <!-- Educational Content -->
       <section class="section">
-        <h2>📚 Tips for Better Posture</h2>
+        <h2>Tips for better posture</h2>
 
         <div class="tips-grid">
           <div class="tip-card">
-            <h3>Monitor Position</h3>
+            <h3>Monitor position</h3>
             <p>Position your monitor at arm's length, with the top of the screen at or slightly below eye level.</p>
           </div>
 
           <div class="tip-card">
-            <h3>Keyboard & Mouse</h3>
+            <h3>Keyboard &amp; mouse</h3>
             <p>Keep your keyboard and mouse close to avoid reaching. Wrists should be neutral, not bent up or down.</p>
           </div>
 
           <div class="tip-card">
-            <h3>Chair Height</h3>
+            <h3>Chair height</h3>
             <p>Adjust your chair so feet are flat on the floor and knees are at a 90-degree angle.</p>
           </div>
 
           <div class="tip-card">
-            <h3>Take Breaks</h3>
-            <p>Follow the 20-20-20 rule: Every 20 minutes, look at something 20 feet away for 20 seconds.</p>
+            <h3>Take breaks</h3>
+            <p>Follow the 20-20-20 rule: every 20 minutes, look at something 20 feet away for 20 seconds.</p>
           </div>
 
           <div class="tip-card">
-            <h3>Sitting Posture</h3>
+            <h3>Sitting posture</h3>
             <p>Sit back in your chair with your back supported. Avoid leaning forward or slouching.</p>
           </div>
 
           <div class="tip-card">
-            <h3>Phone Usage</h3>
+            <h3>Phone usage</h3>
             <p>Hold your phone at eye level instead of looking down to avoid "text neck" and tension headaches.</p>
           </div>
         </div>
@@ -170,9 +193,9 @@
     </div>
 
     <footer>
-      <button id="saveBtn" class="btn btn-primary">Save Settings</button>
-      <button id="resetBtn" class="btn btn-secondary">Reset to Defaults</button>
-      <div id="saveMessage" class="save-message" role="status" aria-live="polite" style="display: none;">✓ Settings saved!</div>
+      <button id="saveBtn" class="btn btn-primary">Save settings</button>
+      <button id="resetBtn" class="btn btn-secondary">Reset to defaults</button>
+      <div id="saveMessage" class="save-message" role="status" aria-live="polite" hidden>✓ Settings saved</div>
     </footer>
   </div>
 
